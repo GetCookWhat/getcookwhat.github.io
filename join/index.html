@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cook What? — Join a household</title>
+  <meta name="robots" content="noindex" />
+  <style>
+    :root { color-scheme: light; }
+    body {
+      margin: 0;
+      padding: 24px 16px 40px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #FFFFFF;
+      color: #222222;
+      line-height: 1.6;
+    }
+    main, footer { max-width: 680px; margin: 0 auto; }
+    h1 { font-size: 26px; margin: 0 0 4px; }
+    h2 { font-size: 18px; margin: 28px 0 8px; }
+    p { margin: 0 0 12px; }
+    .updated { color: #555555; }
+    a { color: #222222; }
+    .code-box {
+      margin: 20px 0 8px;
+      padding: 16px;
+      border: 1px solid #DDDDDD;
+      border-radius: 12px;
+      text-align: center;
+    }
+    .code-label { color: #555555; font-size: 14px; margin: 0 0 4px; }
+    .code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 34px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      margin: 0 0 12px;
+      word-break: break-all;
+    }
+    .button {
+      display: inline-block;
+      box-sizing: border-box;
+      padding: 12px 20px;
+      border-radius: 10px;
+      border: 1.5px solid #F0532C;
+      background: #FFFFFF;
+      color: #C43D1B;
+      font: inherit;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .button.primary { background: #F0532C; color: #FFFFFF; }
+    .buttons { display: flex; flex-direction: column; gap: 10px; margin: 16px 0 0; }
+    .buttons .button { width: 100%; text-align: center; }
+    ol { padding-left: 22px; margin: 0 0 12px; }
+    li { margin: 0 0 6px; }
+    .hidden { display: none; }
+    footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #DDDDDD; font-size: 14px; color: #555555; }
+    footer a { color: #555555; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Join a household on Cook What?</h1>
+    <p class="updated">You've been invited to a household's meal plans.</p>
+
+    <div class="code-box" id="code-box">
+      <p class="code-label">Your invite code</p>
+      <p class="code" id="code">—</p>
+      <button class="button" id="copy" type="button">Copy code</button>
+    </div>
+    <p id="no-code" class="hidden">
+      This link has no invite code. Ask the person who invited you to send it again.
+    </p>
+
+    <div class="buttons">
+      <a class="button primary" id="open-app" href="helpermealplanner:///signup/join">Open in the app</a>
+      <div id="stores" class="buttons" style="margin-top:0">
+        <a class="button" id="store-apple" href="https://apps.apple.com/app/id6791958077">Download on the App Store</a>
+        <a class="button" id="store-google" href="https://play.google.com/store/apps/details?id=com.halp.cookwhat">Get it on Google Play</a>
+      </div>
+    </div>
+
+    <h2>New to Cook What?</h2>
+    <ol>
+      <li>Install Cook What? from the App Store or Google Play.</li>
+      <li>Open the app.</li>
+      <li>Tap "Join a household" and enter the code above.</li>
+    </ol>
+    <p>Already have the app? Tap "Open in the app" and the code is filled in for you.</p>
+  </main>
+  <footer>
+    <a href="/">Cook What?</a> · <a href="/terms/">Terms of Use</a> · <a href="/privacy/">Privacy Policy</a> · <a href="/delete-account/">Delete your account</a> · <a href="mailto:admin.cookwhat@gmail.com">admin.cookwhat@gmail.com</a>
+  </footer>
+  <script>
+    (function () {
+      // The code from ?code=, kept to the token's own alphabet: letters,
+      // digits and dashes (the app strips everything else anyway).
+      var raw = new URLSearchParams(window.location.search).get('code') || '';
+      var code = raw.replace(/[^0-9A-Za-z-]/g, '').toUpperCase().slice(0, 20);
+
+      var codeEl = document.getElementById('code');
+      var copyEl = document.getElementById('copy');
+      var openEl = document.getElementById('open-app');
+      if (code) {
+        codeEl.textContent = code;
+        openEl.href = 'helpermealplanner:///signup/join?token=' + encodeURIComponent(code);
+      } else {
+        document.getElementById('code-box').classList.add('hidden');
+        document.getElementById('no-code').classList.remove('hidden');
+      }
+
+      function copied() {
+        copyEl.textContent = 'Copied!';
+        setTimeout(function () { copyEl.textContent = 'Copy code'; }, 2000);
+      }
+      copyEl.addEventListener('click', function () {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(code).then(copied, fallback);
+        } else {
+          fallback();
+        }
+      });
+      function fallback() {
+        var area = document.createElement('textarea');
+        area.value = code;
+        area.setAttribute('readonly', '');
+        area.style.position = 'absolute';
+        area.style.left = '-9999px';
+        document.body.appendChild(area);
+        area.select();
+        try { document.execCommand('copy'); copied(); } catch (e) { /* the code is on screen to type */ }
+        document.body.removeChild(area);
+      }
+
+      // The visitor's store first. iPadOS reports itself as a Mac with touch.
+      var ua = navigator.userAgent || '';
+      var isAndroid = /Android/i.test(ua);
+      var isApple = /iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+      if (isAndroid && !isApple) {
+        var stores = document.getElementById('stores');
+        stores.insertBefore(document.getElementById('store-google'), document.getElementById('store-apple'));
+      }
+    })();
+  </script>
+</body>
+</html>
