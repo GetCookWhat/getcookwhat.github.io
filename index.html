@@ -1,44 +1,507 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-SG">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Cook What?</title>
+  <title>Cook What? — Weekly meal plans for you and your helper</title>
+  <meta name="description" content="Ma'am, cook what? Plan the week's meals once, and your helper cooks from recipes in their own language: English, Bahasa Indonesia, Tagalog or Burmese. One grocery list for the week. 7-day free trial." />
+  <meta name="theme-color" content="#F0532C" />
+  <link rel="canonical" href="https://getcookwhat.com/" />
+
+  <!-- Link previews (WhatsApp, Facebook, iMessage, X) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Cook What?" />
+  <meta property="og:url" content="https://getcookwhat.com/" />
+  <meta property="og:title" content="Cook What? — Ma'am, cook what? Answered once a week." />
+  <meta property="og:description" content="Weekly meal plans for your household, recipes in your helper's language, and one grocery list. 7-day free trial." />
+  <meta property="og:image" content="https://getcookwhat.com/assets/og-image.png" />
+  <meta property="og:image:width" content="1024" />
+  <meta property="og:image:height" content="500" />
+  <meta property="og:image:alt" content="Cook What? — weekly meal planning with your helper, made easy" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
+  <link rel="preload" as="image" href="/assets/app-meal-plan.jpg" fetchpriority="high" />
+
   <style>
-    :root { color-scheme: light; }
+    :root {
+      color-scheme: light;
+      --orange: #F0532C;
+      --orange-text: #C43D1B; /* the brand orange, dark enough for small text on white */
+      --teal: #0EA894;
+      --teal-text: #0A7D6F;
+      --teal-tint: #E6F6F3;
+      --ink: #2C2C2A;
+      --muted: #6B6358;
+      --line: #E0DCD0;
+      --white: #FFFFFF;
+      --warm: #FBF7F1;
+      --peach: #FDEDE7;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
     body {
       margin: 0;
-      padding: 24px 16px 40px;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #FFFFFF;
-      color: #222222;
-      line-height: 1.6;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans Myanmar", "Myanmar Sangam MN", sans-serif;
+      background: var(--white);
+      color: var(--ink);
+      line-height: 1.55;
+      font-size: 17px;
     }
-    main, footer { max-width: 680px; margin: 0 auto; }
-    h1 { font-size: 26px; margin: 0 0 4px; }
-    h2 { font-size: 18px; margin: 28px 0 8px; }
-    p { margin: 0 0 12px; }
-    .updated { color: #555555; }
-    .num { font-weight: 600; }
-    a { color: #222222; }
-    footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #DDDDDD; font-size: 14px; color: #555555; }
-    footer a { color: #555555; }
+    img, video { display: block; max-width: 100%; }
+    a { color: var(--orange-text); }
+    h1, h2, h3 { line-height: 1.15; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+    p { margin: 0; }
+    .wrap { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
+    section { padding: 56px 0; }
+    .warm { background: var(--warm); }
+    .eyebrow {
+      display: inline-block;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--teal-text);
+      margin: 0 0 10px;
+    }
+    h2 { font-size: 28px; margin: 0 0 12px; }
+    .lead { color: var(--muted); max-width: 560px; }
+
+    /* ---------- Hero ---------- */
+    .hero { background: var(--warm); padding: 20px 0 0; overflow: hidden; }
+    .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 18px; color: var(--ink); text-decoration: none; }
+    /* The bowl PNG has a white ground; multiply drops it into the page colour */
+    .brand img { width: 36px; height: 36px; mix-blend-mode: multiply; }
+    .hero-grid { display: grid; gap: 36px; padding: 36px 0 0; }
+    .hero h1 { font-size: 44px; font-weight: 800; }
+    .hero h1 .accent { color: var(--orange); }
+    .hero .subline { font-size: 22px; font-weight: 600; line-height: 1.3; margin: 12px 0 0; text-wrap: balance; }
+    .hero .what { color: var(--muted); margin: 16px 0 0; max-width: 460px; }
+    .badges { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 28px 0 0; }
+    .badges a { display: block; line-height: 0; border-radius: 8px; }
+    .badges a:focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; }
+    /* Both badges show 48 px of artwork. Google's PNG carries 41/168 of
+       built-in clear space on every side, so it is drawn larger and pulled
+       in by that padding to line up with Apple's. */
+    .badges img { max-width: none; }
+    .badge-apple { height: 48px; width: auto; }
+    .badge-google { height: 71.4px; width: auto; margin: -11.7px; }
+    .trial { margin: 14px 0 0; font-size: 15px; color: var(--muted); }
+    .trial strong { color: var(--teal-text); }
+
+    /* The hero media frame holds an <img> today; a short muted looping
+       <video> drops into the same frame later (same size, same styles). */
+    .hero-media {
+      margin: 0 auto;
+      width: 270px;
+      aspect-ratio: 651 / 1200;
+      border: 10px solid #1F1F1F;
+      border-bottom: 0;
+      border-radius: 40px 40px 0 0;
+      background: var(--white);
+      overflow: hidden;
+      box-shadow: 0 20px 50px rgba(44, 44, 42, 0.18);
+      position: relative;
+      padding-top: 18px;
+      /* Show the top of the phone only, as if it rises from the fold */
+      max-height: 470px;
+    }
+    .hero-media > img, .hero-media > video { width: 100%; height: auto; }
+
+    /* ---------- How it works ---------- */
+    .steps { list-style: none; padding: 0; margin: 28px 0 0; display: grid; gap: 16px; counter-reset: step; }
+    .steps li {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-left: 3px solid var(--orange);
+      border-radius: 16px;
+      padding: 20px;
+      counter-increment: step;
+    }
+    .steps li::before {
+      content: counter(step);
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--teal-text); color: var(--white);
+      font-weight: 700; font-size: 16px;
+      margin: 0 0 12px;
+    }
+    .steps h3 { font-size: 19px; margin: 0 0 6px; }
+    .steps p { color: var(--muted); }
+
+    /* ---------- Your helper's language ---------- */
+    .dish-cards { display: grid; gap: 16px; margin: 28px 0 0; }
+    .dish-card {
+      background: var(--white);
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(44, 44, 42, 0.10);
+      overflow: hidden;
+      display: grid;
+    }
+    .dish-card img { width: 100%; height: 200px; object-fit: cover; }
+    .dish-body { padding: 20px; }
+    .dish-body h3 { font-size: 22px; }
+    .dish-meta { color: var(--muted); font-size: 15px; margin: 4px 0 16px; }
+    .step-label { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+    .langs { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+    .langs li { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+    .lang {
+      display: inline-block;
+      font-size: 13px; font-weight: 600;
+      color: var(--teal-text);
+      background: var(--teal-tint);
+      border-radius: 20px;
+      padding: 2px 10px;
+      margin: 0 0 6px;
+    }
+    .langs p { font-size: 17px; }
+    .langs p[lang="my"] { font-size: 18px; line-height: 1.9; }
+    .dish-note { color: var(--muted); font-size: 15px; margin: 16px 0 0; }
+
+    /* ---------- Why households like it ---------- */
+    .why-cards { list-style: none; padding: 0; margin: 16px 0 0; display: grid; gap: 16px; }
+    .why-cards li {
+      background: var(--white);
+      border-radius: 16px;
+      border-left: 3px solid var(--orange);
+      box-shadow: 0 4px 14px rgba(44, 44, 42, 0.10);
+      padding: 20px;
+    }
+    .why-cards .icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      background: var(--peach);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; line-height: 1;
+      margin: 0 0 12px;
+    }
+    .why-cards h3 { font-size: 19px; margin: 0 0 6px; }
+    .why-cards p { color: var(--muted); }
+
+    /* ---------- Dish photo strip ---------- */
+    .strip-section { padding: 48px 0; }
+    .strip {
+      list-style: none; margin: 24px 0 0; padding: 0 16px 8px;
+      display: grid; grid-auto-flow: column; grid-auto-columns: 62%;
+      gap: 12px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scroll-padding: 0 16px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .strip::-webkit-scrollbar { display: none; }
+    .strip li { scroll-snap-align: start; }
+    .strip img { width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: cover; border-radius: 14px; background: var(--warm); }
+    .strip span { display: block; font-size: 15px; font-weight: 600; margin: 8px 2px 0; }
+
+    /* ---------- FAQ ---------- */
+    .faq { margin: 24px 0 0; max-width: 720px; }
+    .faq details { border-bottom: 1px solid var(--line); }
+    .faq details:first-child { border-top: 1px solid var(--line); }
+    .faq summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 18px 36px 18px 0;
+      font-weight: 600;
+      font-size: 18px;
+      position: relative;
+    }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::after {
+      content: "+";
+      position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+      font-size: 26px; font-weight: 400; color: var(--orange);
+    }
+    .faq details[open] summary::after { content: "–"; }
+    .faq summary:focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
+    .faq .answer { padding: 0 0 18px; color: var(--muted); }
+    .faq .answer p + p { margin-top: 8px; }
+
+    /* ---------- Closing call and footer ---------- */
+    .closing { text-align: center; background: var(--peach); }
+    .closing h2 { font-size: 30px; }
+    .closing .badges { justify-content: center; }
+    footer { padding: 32px 0 40px; font-size: 15px; color: var(--muted); }
+    footer nav { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 0 0 12px; }
+    footer a { color: var(--muted); }
+    footer .trademarks { font-size: 13px; margin: 8px 0 0; }
+
+    /* ---------- Wider screens ---------- */
+    @media (min-width: 720px) {
+      section { padding: 80px 0; }
+      h2 { font-size: 34px; }
+      .steps { grid-template-columns: repeat(2, 1fr); }
+      .why-cards { grid-template-columns: repeat(2, 1fr); gap: 20px; }
+      .dish-cards { grid-template-columns: 1fr 1fr; gap: 24px; }
+      .dish-card img { height: 240px; }
+      .dish-body { padding: 24px; }
+      .strip { grid-auto-flow: row; grid-template-columns: repeat(4, 1fr); overflow: visible; padding: 0; }
+      .strip-section .strip { max-width: 1040px; margin-left: auto; margin-right: auto; padding: 0 16px; }
+    }
+    @media (min-width: 900px) {
+      .hero { padding-top: 28px; }
+      .hero-grid { grid-template-columns: 1.1fr 0.9fr; align-items: end; gap: 48px; padding-top: 24px; }
+      .hero-copy { padding: 0 0 96px; }
+      .hero h1 { font-size: 64px; }
+      .hero .subline { font-size: 26px; }
+      .hero .what { font-size: 18px; }
+      .hero-media { width: 300px; max-height: 560px; }
+      .why-cards, .steps { grid-template-columns: repeat(4, 1fr); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .strip { scroll-behavior: auto; }
+    }
   </style>
 </head>
 <body>
+
+  <!-- 1. Hero -->
+  <header class="hero">
+    <div class="wrap">
+      <a class="brand" href="/" aria-label="Cook What? home">
+        <img src="/assets/logo-bowl.png" width="36" height="36" alt="" />
+        Cook What?
+      </a>
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <h1><span class="accent">Ma’am,</span> cook what?</h1>
+          <p class="subline">Answered once a week, not every day.</p>
+          <p class="what">Weekly meal plans with your helper, made easy, powered by AI.</p>
+          <div class="badges store-badges">
+            <a class="store-apple" href="https://apps.apple.com/app/id6791958077">
+              <img class="badge-apple" src="/assets/app-store-badge.svg" width="144" height="48" alt="Download on the App Store" />
+            </a>
+            <a class="store-google" href="https://play.google.com/store/apps/details?id=com.halp.cookwhat">
+              <img class="badge-google" src="/assets/google-play-badge.png" width="185" height="71" alt="Get it on Google Play" />
+            </a>
+          </div>
+          <p class="trial"><strong>7-day free trial.</strong> Cancel any time.</p>
+        </div>
+        <!-- To swap the screenshot for a video, replace the <img> below with:
+             <video src="/assets/hero.mp4" poster="/assets/app-meal-plan.jpg"
+                    autoplay muted loop playsinline preload="metadata"
+                    aria-label="The Cook What? weekly meal plan"></video>
+             Keep it short (5–10 s), muted, and around 1 MB; same 651×1200 frame. -->
+        <figure class="hero-media">
+          <img src="/assets/app-meal-plan.jpg" width="651" height="1200" fetchpriority="high"
+               alt="The Cook What? Meal Plan screen: this week's draft plan with an Approve &amp; Publish button and Monday's breakfast, Mee Sua with Egg &amp; Minced Pork" />
+        </figure>
+      </div>
+    </div>
+  </header>
+
   <main>
-    <h1>Cook What?</h1>
-    <p>Weekly meal plans for households and their helpers — one shared plan, the recipes and the grocery list, in the helper's language.</p>
-    <h2>Legal and support</h2>
-    <ul>
-      <li><a href="/terms/">Terms of Use</a></li>
-      <li><a href="/privacy/">Privacy Policy</a></li>
-      <li><a href="/delete-account/">Delete your account</a></li>
-      <li>Contact: <a href="mailto:admin.cookwhat@gmail.com">admin.cookwhat@gmail.com</a></li>
-    </ul>
+
+    <!-- 2. How it works -->
+    <section aria-labelledby="how">
+      <div class="wrap">
+        <p class="eyebrow">How it works</p>
+        <h2 id="how">Plan once. Done for the week.</h2>
+        <ol class="steps">
+          <li>
+            <h3>Set your household’s tastes</h3>
+            <p>Cuisines, allergies, restrictions, preferences. Tell us once.</p>
+          </li>
+          <li>
+            <h3>Meal plans, automated</h3>
+            <p>Browse the recipe library and swap in dishes you fancy.</p>
+          </li>
+          <li>
+            <h3>Rate your meals, reward your helper</h3>
+            <p>Rate each meal – your helper earns reward vouchers and our AI meal planner learns what your family likes.</p>
+          </li>
+          <li>
+            <h3>Grocery lists, automated</h3>
+            <p>Convert your meal plans into a grocery list in one tap.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- 3. Why households like it -->
+    <section class="warm" aria-labelledby="why">
+      <div class="wrap">
+        <p class="eyebrow">Why households like it</p>
+        <h2 id="why">Good food at home, made easy.</h2>
+        <ul class="why-cards">
+          <li>
+            <span class="icon" aria-hidden="true">🤝</span>
+            <h3>Easy planning with your helper</h3>
+            <p>No more daily back-and-forth about what to cook. Just good food.</p>
+          </li>
+          <li>
+            <span class="icon" aria-hidden="true">⏰</span>
+            <h3>More time to prep</h3>
+            <p>Your helper sees the week ahead and prepares meals in advance.</p>
+          </li>
+          <li>
+            <span class="icon" aria-hidden="true">🏡</span>
+            <h3>Right for your family</h3>
+            <p>Track what your family eats, and keep it tasty and nourishing.</p>
+          </li>
+          <li>
+            <span class="icon" aria-hidden="true">🛒</span>
+            <h3>Grocery lists made easy</h3>
+            <p>Every meal plan comes with its grocery list, ready to shop.</p>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 4. Dish photo strip (photos from the live recipe library) -->
+    <section class="strip-section" aria-labelledby="dishes">
+      <div class="wrap">
+        <p class="eyebrow">From the recipe library</p>
+        <h2 id="dishes">Hundreds of <span style="white-space: nowrap">home-style</span> dishes.</h2>
+        <p class="lead">Chinese, Malay, Indian, Filipino, Western and more.</p>
+      </div>
+      <ul class="strip">
+        <li><img src="/assets/dish-singapore-chicken-rice.jpg" width="800" height="533" loading="lazy" alt="Singapore chicken rice with sliced chicken, cucumber and chilli sauce" /><span>Singapore Chicken Rice</span></li>
+        <li><img src="/assets/dish-sweet-and-sour-pork.jpg" width="800" height="533" loading="lazy" alt="Sweet and sour pork in a glossy red sauce with peppers" /><span>Sweet and Sour Pork</span></li>
+        <li><img src="/assets/dish-tau-yew-bak.jpg" width="800" height="533" loading="lazy" alt="Braised pork belly in dark soy sauce with eggs" /><span>Tau Yew Bak</span></li>
+        <li><img src="/assets/dish-steamed-fish-ginger.jpg" width="800" height="533" loading="lazy" alt="Steamed fish topped with ginger and spring onion in light soy sauce" /><span>Steamed Fish with Ginger</span></li>
+        <li><img src="/assets/dish-chicken-chop-gravy.jpg" width="800" height="533" loading="lazy" alt="Chicken chop with brown gravy, roast potatoes and peas" /><span>Chicken Chop with Gravy</span></li>
+        <li><img src="/assets/dish-chicken-mushroom-pie.jpg" width="800" height="533" loading="lazy" alt="Chicken and mushroom pie with a golden pastry crust" /><span>Chicken and Mushroom Pie</span></li>
+        <li><img src="/assets/dish-nasi-lemak.jpg" width="800" height="533" loading="lazy" alt="Nasi lemak with fried chicken, egg, peanuts, cucumber and sambal" /><span>Nasi Lemak</span></li>
+        <li><img src="/assets/dish-beef-lasagna.jpg" width="800" height="533" loading="lazy" alt="A slice of beef lasagna" /><span>Beef Lasagna</span></li>
+      </ul>
+    </section>
+
+    <!-- 5. Your helper's language. Step 1 of two dishes, copied from their live
+         library translations (recipe_library 22a9396f-… and 07c2c513-…, 2 Nov 2026). -->
+    <section class="warm" aria-labelledby="language">
+      <div class="wrap">
+        <p class="eyebrow">Your helper’s language</p>
+        <h2 id="language">Recipes in your helper’s language.</h2>
+        <p class="lead">English, Bahasa Indonesia, Tagalog and Burmese.</p>
+        <div class="dish-cards">
+          <article class="dish-card">
+            <img src="/assets/dish-three-cup-chicken.jpg" width="800" height="533" loading="lazy"
+                 alt="Three Cup Chicken: glossy braised chicken pieces with ginger and herbs" />
+            <div class="dish-body">
+              <h3>Three Cup Chicken</h3>
+              <p class="dish-meta">Chinese · Easy · 35 min</p>
+              <p class="step-label">Step 1</p>
+              <ul class="langs">
+                <li><span class="lang">English</span><p lang="en">Heat the sesame oil in a wok or large pan on medium-high heat. Add the ginger and garlic. Fry for 1 minute, stirring constantly, until fragrant.</p></li>
+                <li><span class="lang">Bahasa Indonesia</span><p lang="id">Panaskan minyak wijen di wajan atau panci besar dengan api sedang-besar. Masukkan jahe dan bawang putih. Tumis selama 1 menit sambil terus diaduk hingga harum.</p></li>
+                <li><span class="lang">Tagalog</span><p lang="tl">Initin ang sesame oil sa kawali o malaking palayok sa katamtamang malakas na apoy. Ilagay ang luya at bawang. Igisa ng 1 minuto na patuloy na hinahalo hanggang mabango.</p></li>
+                <li><span class="lang">မြန်မာ · Burmese</span><p lang="my">ဒယ်အိုးနက် သို့မဟုတ် ဒယ်အိုးကြီးထဲတွင် နှမ်းဆီကို မီးအလယ်အလတ်မှ မီးပြင်းပြင်းဖြင့်အပူပေးပါ။ ဂျင်းနှင့်ကြက်သွန်ဖြူထည့်ပြီး မွှေးလာသည်အထိ အဆက်မပြတ်မွှေရင်း ၁ မိနစ်ကြော်ပါ။</p></li>
+              </ul>
+            </div>
+          </article>
+          <article class="dish-card">
+            <img src="/assets/dish-honey-mustard-chicken.jpg" width="800" height="533" loading="lazy"
+                 alt="Honey Mustard Chicken Thighs: golden roasted chicken thighs with a honey mustard glaze" />
+            <div class="dish-body">
+              <h3>Honey Mustard Chicken Thighs</h3>
+              <p class="dish-meta">Western · Easy · 35 min</p>
+              <p class="step-label">Step 1</p>
+              <ul class="langs">
+                <li><span class="lang">English</span><p lang="en">Pour the honey into a bowl. Add both mustards, minced garlic, olive oil, salt and pepper. Whisk together until well combined.</p></li>
+                <li><span class="lang">Bahasa Indonesia</span><p lang="id">Tuangkan madu ke dalam mangkuk. Tambahkan kedua jenis mustard, bawang putih cincang, minyak zaitun, garam dan merica. Kocok rata hingga semua bahan tercampur dengan baik.</p></li>
+                <li><span class="lang">Tagalog</span><p lang="tl">Ibuhos ang pulot sa isang mangkok. Idagdag ang dalawang uri ng mustasa, tinadtad na bawang, olive oil, asin at paminta. Haluin nang mabuti hanggang maayos na pagsamahin.</p></li>
+                <li><span class="lang">မြန်မာ · Burmese</span><p lang="my">ပျားရည်ကို ပန်းကန်လုံးထဲထည့်ပါ။ မုန်ညင်းနှစ်မျိုးစလုံး၊ နုပ်နုပ်စဉ်းထားသောကြက်သွန်ဖြူ၊ သံလွင်ဆီ၊ ဆားနှင့် ငရုတ်ကောင်းထည့်ပါ။ ကောင်းစွာပေါင်းစပ်သွားအောင် မွှေတံဖြင့်မွှေပါ။</p></li>
+              </ul>
+            </div>
+          </article>
+        </div>
+        <p class="dish-note">Dish names stay the same in every language.</p>
+      </div>
+    </section>
+
+    <!-- 6. FAQ (no prices anywhere on this page) -->
+    <section aria-labelledby="faq">
+      <div class="wrap">
+        <p class="eyebrow">Questions</p>
+        <h2 id="faq">Good to know</h2>
+        <div class="faq">
+          <details>
+            <summary>Does my helper need to pay?</summary>
+            <div class="answer">
+              <p>No. One subscription covers your whole household, helper included.</p>
+            </div>
+          </details>
+          <details>
+            <summary>Which languages does it support?</summary>
+            <div class="answer">
+              <p>English, Bahasa Indonesia, Tagalog and Burmese.</p>
+            </div>
+          </details>
+          <details>
+            <summary>Can my spouse plan too?</summary>
+            <div class="answer">
+              <p>Yes. Invite them as a co-employer from the Home tab, on the same subscription.</p>
+            </div>
+          </details>
+          <details>
+            <summary>How do I cancel?</summary>
+            <div class="answer">
+              <p>Any time, in your App Store or Google Play settings. Cancel within the 7-day trial and you won’t be charged. Deleting the app doesn’t cancel it.</p>
+            </div>
+          </details>
+          <details>
+            <summary>Is our data safe?</summary>
+            <div class="answer">
+              <p>Yes. Only your household sees your plans. We don’t sell your data, we follow Singapore’s PDPA, and payments go through Apple or Google. See our <a href="/privacy/">Privacy Policy</a>.</p>
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- Closing call to download -->
+    <section class="closing" aria-labelledby="start">
+      <div class="wrap">
+        <h2 id="start">Plan this week’s meals tonight.</h2>
+        <p class="lead" style="margin: 0 auto;">Start your 7-day free trial.</p>
+        <div class="badges store-badges">
+          <a class="store-apple" href="https://apps.apple.com/app/id6791958077">
+            <img class="badge-apple" src="/assets/app-store-badge.svg" width="144" height="48" loading="lazy" alt="Download on the App Store" />
+          </a>
+          <a class="store-google" href="https://play.google.com/store/apps/details?id=com.halp.cookwhat">
+            <img class="badge-google" src="/assets/google-play-badge.png" width="185" height="71" loading="lazy" alt="Get it on Google Play" />
+          </a>
+        </div>
+      </div>
+    </section>
+
   </main>
+
+  <!-- 7. Footer -->
   <footer>
-    <a href="/">Cook What?</a> · <a href="/terms/">Terms of Use</a> · <a href="/privacy/">Privacy Policy</a> · <a href="/delete-account/">Delete your account</a> · <a href="mailto:admin.cookwhat@gmail.com">admin.cookwhat@gmail.com</a>
+    <div class="wrap">
+      <nav aria-label="Legal and support">
+        <a href="/terms/">Terms of Use</a>
+        <a href="/privacy/">Privacy Policy</a>
+        <a href="/delete-account/">Delete your account</a>
+        <a href="mailto:admin.cookwhat@gmail.com">admin.cookwhat@gmail.com</a>
+      </nav>
+      <p>© 2026 Halp Group Pte. Ltd.</p>
+      <p class="trademarks">Apple and the Apple logo are trademarks of Apple Inc. Google Play and the Google Play logo are trademarks of Google LLC.</p>
+    </div>
   </footer>
+
+  <script>
+    // The visitor's store first, as on /join/. iPadOS reports itself as a
+    // Mac with touch.
+    (function () {
+      var ua = navigator.userAgent || '';
+      var isAndroid = /Android/i.test(ua);
+      var isApple = /iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+      if (!isAndroid || isApple) return;
+      var groups = document.querySelectorAll('.store-badges');
+      for (var i = 0; i < groups.length; i++) {
+        groups[i].insertBefore(groups[i].querySelector('.store-google'), groups[i].querySelector('.store-apple'));
+      }
+    })();
+  </script>
+
+  <!-- ANALYTICS PLACEHOLDER: Cloudflare Web Analytics.
+       Not enabled yet. When approved, paste the beacon snippet from the
+       Cloudflare dashboard (Web Analytics > Add a site > getcookwhat.com) here,
+       just above </body>. It is cookie-free; check the Privacy Policy wording
+       before turning it on. -->
 </body>
 </html>
