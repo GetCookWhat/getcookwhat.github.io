@@ -3,10 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Cook What? — Weekly meal plans for you and your helper</title>
-  <meta name="description" content="Ma'am, cook what? Plan the week's meals once, and your helper cooks from recipes in their own language: English, Bahasa Indonesia, Tagalog or Burmese. One grocery list for the week. 7-day free trial." />
+  <title>Cook What? — Weekly meal plans for you and your helper | Singapore</title>
+  <meta name="description" content="Weekly meal plans for Singapore households with a domestic helper or maid. Recipes in your helper's language and one grocery list. 7-day free trial." />
   <meta name="theme-color" content="#F0532C" />
   <link rel="canonical" href="https://getcookwhat.com/" />
+  <!-- Safari on iPhone: "Open in the App Store" banner -->
+  <meta name="apple-itunes-app" content="app-id=6791958077" />
 
   <!-- Link previews (WhatsApp, Facebook, iMessage, X) -->
   <meta property="og:type" content="website" />
@@ -23,6 +25,115 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
   <link rel="preload" as="image" href="/assets/app-meal-plan.jpg" fetchpriority="high" />
+
+  <!-- Structured data for search engines and AI assistants. The FAQ answers
+       must match the visible FAQ below word for word; no prices. -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://getcookwhat.com/#org",
+          "name": "Halp Group Pte. Ltd.",
+          "url": "https://getcookwhat.com/",
+          "email": "admin.cookwhat@gmail.com",
+          "logo": "https://getcookwhat.com/assets/apple-touch-icon.png",
+          "address": {
+            "@type": "PostalAddress",
+            "addressCountry": "SG"
+          }
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://getcookwhat.com/#website",
+          "name": "Cook What?",
+          "url": "https://getcookwhat.com/",
+          "inLanguage": "en-SG",
+          "publisher": {
+            "@id": "https://getcookwhat.com/#org"
+          }
+        },
+        {
+          "@type": "MobileApplication",
+          "@id": "https://getcookwhat.com/#app",
+          "name": "Cook What?",
+          "description": "Weekly meal plans for Singapore households with a domestic helper. Recipes in English, Bahasa Indonesia, Tagalog and Burmese, one grocery list for the week, and FairPrice voucher rewards for the helper.",
+          "url": "https://getcookwhat.com/",
+          "image": "https://getcookwhat.com/assets/og-image.png",
+          "operatingSystem": "iOS, Android",
+          "applicationCategory": "LifestyleApplication",
+          "areaServed": {
+            "@type": "Country",
+            "name": "Singapore"
+          },
+          "availableLanguage": [
+            "English",
+            "Indonesian",
+            "Tagalog",
+            "Burmese"
+          ],
+          "installUrl": [
+            "https://apps.apple.com/app/id6791958077",
+            "https://play.google.com/store/apps/details?id=com.halp.cookwhat"
+          ],
+          "sameAs": [
+            "https://apps.apple.com/app/id6791958077",
+            "https://play.google.com/store/apps/details?id=com.halp.cookwhat"
+          ],
+          "publisher": {
+            "@id": "https://getcookwhat.com/#org"
+          }
+        },
+        {
+          "@type": "FAQPage",
+          "@id": "https://getcookwhat.com/#faq",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Does my helper need to pay?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. One subscription covers your whole household, helper included."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Which languages does it support?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "English, Bahasa Indonesia, Tagalog and Burmese."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Can my spouse plan too?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. Invite them as a co-employer from the Home tab, on the same subscription."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "How do I cancel?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Any time, in your App Store or Google Play settings. Cancel within the 7-day trial and you won’t be charged. Deleting the app doesn’t cancel it."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Is our data safe?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. Only your household sees your plans. We don’t sell your data, we follow Singapore’s PDPA, and payments go through Apple or Google. See our Privacy Policy."
+              }
+            }
+          ]
+        }
+      ]
+    }
+  </script>
 
   <style>
     :root {

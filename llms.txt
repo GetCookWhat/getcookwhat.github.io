@@ -1,0 +1,30 @@
+# Cook What?
+
+> Cook What? is a weekly meal-planning app for Singapore households with a domestic helper (maid). The household plans the week's meals once, and the helper cooks from recipes in their own language, with one grocery list for the week. Made by Halp Group Pte. Ltd., Singapore.
+
+## What it does
+
+- Plans breakfast, lunch and dinner for the week, built around the household's cuisines, allergies, dietary restrictions (such as no pork, no beef, vegetarian) and preferences.
+- Draws on a library of hundreds of home-style recipes: Chinese, Malay, Indian, Indonesian, Filipino, Japanese, Korean, Thai, Italian and Western. An AI meal planner fills gaps and learns from the household's meal ratings.
+- Shows every recipe's steps and ingredients in English, Bahasa Indonesia, Tagalog and Burmese, so the helper reads them in their own language.
+- Turns the week's plan into one grocery list in one tap.
+- Lets the employer rate each meal; the helper earns points towards NTUC FairPrice vouchers.
+- Many dishes include notes on making them milder or softer for young children.
+
+## Who it is for
+
+Employers in Singapore, local and expat, who want tasty, nourishing home-cooked food without deciding what to cook every day, and their helpers. One subscription covers the whole household: the main employer, a co-employer (such as a spouse) and the helper. The helper does not pay.
+
+## Getting it
+
+- iPhone: https://apps.apple.com/app/id6791958077
+- Android: https://play.google.com/store/apps/details?id=com.halp.cookwhat
+- Starts with a 7-day free trial; cancel any time in App Store or Google Play settings.
+
+## Links
+
+- [Home](https://getcookwhat.com/)
+- [Terms of Use](https://getcookwhat.com/terms/)
+- [Privacy Policy](https://getcookwhat.com/privacy/)
+- [Delete your account](https://getcookwhat.com/delete-account/)
+- Contact: admin.cookwhat@gmail.com

@@ -1,0 +1,6 @@
+# getcookwhat.com: search engines and AI crawlers are welcome.
+# /join/ is an invite-link page and carries its own noindex tag.
+User-agent: *
+Allow: /
+
+Sitemap: https://getcookwhat.com/sitemap.xml
