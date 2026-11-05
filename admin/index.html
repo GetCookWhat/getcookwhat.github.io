@@ -328,6 +328,11 @@
       if (!iso) return '';
       return new Date(iso).toLocaleDateString('en-SG', { day: 'numeric', month: 'short' });
     }
+    function formatDayTime(iso) {
+      if (!iso) return '';
+      var d = new Date(iso);
+      return d.toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' }) + ', ' + formatTime(d);
+    }
     function formatTime(d) {
       return d.toLocaleTimeString('en-SG', { hour: 'numeric', minute: '2-digit' });
     }
@@ -567,14 +572,16 @@
       await load();
     }
 
+    var DEFAULT_SENT_NOTE = 'Your FairPrice vouchers are on the way to your delivery address!';
     async function markSent(row) {
       var note = el('textarea', { id: 'sent-note', maxlength: String(NOTE_MAX), placeholder: 'e.g. 2 × S$5 e-vouchers sent by WhatsApp' });
+      note.value = DEFAULT_SENT_NOTE;
       var go = await ask({
         title: 'Mark as sent?',
         body: [
-          'Only once the FairPrice vouchers for ' + (row.helper_name || 'the helper') + ' (' +
+          'Only once ' + formatSgd(redemptionTotal(row)) + ' of FairPrice vouchers for ' + (row.helper_name || 'the helper') + ' (' +
             (row.household_name || 'deleted household') + ') have gone out: ' + redemptionWhat(row) + '.',
-          el('label', { class: 'field', for: 'sent-note', text: 'Note (optional — the household can see this)' }),
+          el('label', { class: 'field', for: 'sent-note', text: 'Note (kept on the record; write it as something the household may see)' }),
           note
         ],
         actions: [
@@ -684,13 +691,19 @@
           ? 'Marked paid ' + timeAgo(row.paid_claimed_at)
           : 'Not marked paid · started ' + timeAgo(row.created_at)
       }));
+      card.appendChild(el('div', { class: 'muted', text: row.paid_claimed_at
+        ? 'Submitted ' + formatDayTime(row.paid_claimed_at)
+        : 'Started ' + formatDayTime(row.created_at) + ' · not submitted yet' }));
       card.appendChild(payerLine(row));
       if (row.pool_balance_sgd !== null && row.pool_balance_sgd !== undefined) {
-        card.appendChild(el('div', { class: 'muted', text: 'Pool holds ' + formatSgd(row.pool_balance_sgd) + ' of FairPrice vouchers' }));
+        // The employer-funded booster pool only (reward_pools pool_type 'employer').
+        // The helper's own voucher is paid by Cook What when she redeems points,
+        // and is not a pool; the old S$1.67 platform seed is dormant and not shown.
+        card.appendChild(el('div', { class: 'muted', text: 'Household booster now: ' + formatSgd(row.pool_balance_sgd) + ' (employer top-ups only, not the Cook What reward)' }));
       }
       // confirm_topup refuses a purchase without it (sql/topup/03).
       card.appendChild(row.acknowledged_at
-        ? el('div', { class: 'muted', text: 'FairPrice acknowledged ' + formatDay(row.acknowledged_at) + ' · Terms ' + (row.terms_version || '—') })
+        ? el('div', { class: 'muted', text: 'FairPrice terms accepted (version ' + (row.terms_version || '—') + ')' })
         : el('div', { class: 'muted danger-text', text: 'No FairPrice acknowledgment on record — this cannot be confirmed' }));
       card.appendChild(deliveryLine(row.household_id ? state.deliveries[row.household_id] : null));
       if (row.receipt_path) card.appendChild(receiptBlock(row.receipt_path));
@@ -750,20 +763,27 @@
       return card;
     }
 
+    // The helper's reward is the Cook What-paid voucher (voucher_value_sgd)
+    // plus whatever the employer's booster pool held (booster_value_sgd),
+    // both sent as FairPrice vouchers in one go.
+    function redemptionTotal(row) {
+      return Number(row.voucher_value_sgd || 0) + Number(row.booster_value_sgd || 0);
+    }
     function redemptionWhat(row) {
-      var booster = row.booster_value_sgd || 0;
-      return row.voucher_type + ' (' + formatSgd(row.voucher_value_sgd) + ')' +
-        (booster > 0 ? ' + ' + formatSgd(booster) + ' of FairPrice vouchers from the reward pool' : '');
+      var booster = Number(row.booster_value_sgd || 0);
+      return formatSgd(row.voucher_value_sgd) + ' Cook What reward' +
+        (booster > 0 ? ' + ' + formatSgd(booster) + ' household booster' : '');
     }
 
     function redemptionCard(row) {
       var pending = row.status === 'pending';
       var card = el('article', { class: 'card' + (pending ? '' : ' subdued') });
-      card.appendChild(el('h2', {}, el('span', { class: 'pii', text: row.household_name || 'Deleted household' })));
+      card.appendChild(el('h2', {}, formatSgd(redemptionTotal(row)) + ' FairPrice vouchers' + (pending ? ' to send' : '') + ' · ',
+        el('span', { class: 'pii', text: row.household_name || 'Deleted household' })));
       var statusText;
-      if (pending) statusText = 'Waiting · requested ' + timeAgo(row.created_at);
-      else if (row.fulfilled_at) statusText = 'Sent ' + formatDay(row.fulfilled_at) + ' · requested ' + formatDay(row.created_at);
-      else statusText = 'Fulfilled · requested ' + formatDay(row.created_at);
+      if (pending) statusText = 'Requested ' + formatDayTime(row.created_at) + ' (' + timeAgo(row.created_at) + ')';
+      else if (row.fulfilled_at) statusText = 'Sent ' + formatDayTime(row.fulfilled_at) + ' · requested ' + formatDayTime(row.created_at);
+      else statusText = 'Fulfilled · requested ' + formatDayTime(row.created_at);
       var status = el('div', { class: 'status ' + (pending ? 'coral' : 'teal'), text: statusText });
       if (!pending && row.fulfilled_by_name) {
         status.appendChild(document.createTextNode(' · by '));
