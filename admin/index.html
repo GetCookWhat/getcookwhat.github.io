@@ -22,12 +22,18 @@
     (app/admin/topups.tsx, lib/topupsApi.ts): same RPCs, same rules, same
     wording. How to use it: Docs/admin_web.md.
 
+    The Overview tab is the Claude admin dashboard (Docs/admin_dashboard.md),
+    live: admin_overview() (sql/ops/01_admin_overview.sql) returns the same
+    JSON as scripts/dashboard-snapshot.ts, and the render below is
+    scripts/dashboard/dashboard.html's. Counts only.
+
     SECURITY. This page holds only the PUBLIC project URL and anon key (the
     EXPO_PUBLIC_ values the app already ships). It is not the gate. Every
     read and write below is refused by the database for anyone not in
-    app_admins: admin_list_topups, confirm_topup, reject_topup,
-    admin_list_redemptions and admin_mark_redemption_sent each re-check
-    is_app_admin(); household_voucher_delivery and the topup-receipts bucket
+    app_admins: admin_overview, admin_list_topups, confirm_topup,
+    reject_topup, admin_list_redemptions and admin_mark_redemption_sent each
+    re-check is_app_admin(), and the notify function re-checks app_admins;
+    household_voucher_delivery and the topup-receipts bucket
     are behind is_app_admin() RLS policies. Checking is_app_admin() here only
     decides what to render.
 
@@ -111,8 +117,8 @@
     .lead { color: var(--muted); margin: 0 0 14px; font-size: 15px; }
 
     /* Tabs */
-    .tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 14px 0 12px; }
-    @media (max-width: 520px) { .tabs { grid-template-columns: repeat(2, 1fr); } }
+    .tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 14px 0 12px; }
+    @media (max-width: 620px) { .tabs { grid-template-columns: repeat(2, 1fr); } }
     .tab {
       font: inherit; font-size: 14px; font-weight: 600;
       padding: 9px 6px; border-radius: 20px; cursor: pointer;
@@ -195,6 +201,113 @@
     @media (min-width: 521px) { dialog .actions { flex-direction: row; } }
     .skeleton { height: 120px; border-radius: 16px; background: var(--chip); margin: 0 0 14px; animation: pulse 1.2s ease-in-out infinite; }
     @keyframes pulse { 50% { opacity: 0.55; } }
+
+    /* Overview tab: the Claude dashboard's layout (scripts/dashboard/dashboard.html),
+       every class prefixed ov- so nothing collides with the inbox cards. */
+    @media (max-width: 620px) { .tab.wide { grid-column: 1 / -1; } }
+    .ov {
+      --ov-bg: var(--page); --ov-card: var(--card); --ov-ink: var(--ink); --ov-ink-2: #5E5A52; --ov-muted: var(--muted);
+      --ov-line: var(--line); --ov-accent: var(--coral-text); --ov-stripe: var(--coral);
+      --ov-s1: #D9461F; --ov-s2: #0E9483;
+      --ov-good: #16794A; --ov-good-bg: #E7F4EC; --ov-warn: #9A4B05; --ov-warn-bg: #FDF1E2;
+      --ov-info: #3B5F8A; --ov-info-bg: #E9EFF7; --ov-bad: #B3261E; --ov-bad-bg: #FBE9E7;
+      --ov-display: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: grid; gap: 14px; font-size: 15px;
+    }
+    @media (prefers-color-scheme: dark) {
+      .ov {
+        --ov-ink-2: #C9C5BB; --ov-s1: #EC5A33; --ov-s2: #14A08D;
+        --ov-good: #6FD29B; --ov-good-bg: #1D3226; --ov-warn: #F2B45C; --ov-warn-bg: #3A2B16;
+        --ov-info: #9CC0EC; --ov-info-bg: #1F2B3A; --ov-bad: #F19A92; --ov-bad-bg: #3D1F1C;
+      }
+    }
+    .ov h2 { font: 650 17px/1.3 var(--ov-display); margin: 0; }
+    .ov h3 { font-size: 13px; font-weight: 600; line-height: 1.3; color: var(--ov-ink-2); margin: 0; }
+    .ov p { margin: 0; }
+    .ov a { color: var(--ov-accent); }
+    .ov-num { font-variant-numeric: tabular-nums; }
+    .ov-muted { color: var(--ov-muted); }
+    .ov-small { font-size: 13px; }
+    .ov-stamp { display: flex; gap: 6px 10px; align-items: center; flex-wrap: wrap; font-size: 13px; color: var(--ov-ink-2); }
+    .ov-stamp b { color: var(--ov-ink); font-weight: 600; }
+    .ov-chip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--ov-line); font-size: 12px; color: var(--ov-ink-2); white-space: nowrap; }
+    .ov-card { background: var(--ov-card); border-radius: 16px; box-shadow: var(--shadow); border-left: 3px solid var(--ov-stripe); padding: 14px 14px 16px; display: grid; gap: 12px; min-width: 0; }
+    .ov-card.quiet { border-left-color: var(--ov-line); }
+    .ov-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+    .ov-attn { display: grid; gap: 8px; }
+    .ov-attn-row { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 10px; background: var(--ov-bg); }
+    .ov-attn-row .n { min-width: 44px; text-align: center; font: 700 18px/1 var(--ov-display); padding: 8px 6px; border-radius: 8px; }
+    .ov-attn-row.warn .n { background: var(--ov-warn-bg); color: var(--ov-warn); }
+    .ov-attn-row.ok .n { background: var(--ov-good-bg); color: var(--ov-good); }
+    .ov-attn-row.info .n { background: var(--ov-info-bg); color: var(--ov-info); }
+    .ov-attn-row .what { display: grid; gap: 1px; min-width: 0; }
+    .ov-attn-row .what b { font-weight: 600; }
+    .ov-attn-row .what span { font-size: 13px; color: var(--ov-ink-2); overflow-wrap: anywhere; }
+    .ov-state { font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+    .ov-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    @media (min-width: 560px) { .ov-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    .ov-tile { background: var(--ov-card); border-radius: 12px; box-shadow: var(--shadow); padding: 12px; display: grid; gap: 2px; align-content: start; border: 1px solid transparent; }
+    @media (prefers-color-scheme: dark) { .ov-tile { border-color: var(--ov-line); } }
+    .ov-tile .label { font-size: 12.5px; color: var(--ov-ink-2); }
+    .ov-tile .value { font: 700 28px/1.1 var(--ov-display); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+    .ov-tile .sub { font-size: 12px; color: var(--ov-muted); }
+    .ov-approx { font-family: inherit; font-size: 13px; font-weight: 500; line-height: 1.2; color: var(--ov-ink-2); letter-spacing: 0; white-space: nowrap; }
+    .ov-funnel { display: grid; gap: 8px; }
+    .ov-f-row { display: grid; grid-template-columns: minmax(118px, 38%) 1fr; gap: 10px; align-items: center; }
+    .ov-f-label { font-size: 13.5px; }
+    .ov-f-bar { position: relative; height: 26px; background: var(--ov-bg); border-radius: 4px; }
+    .ov-f-bar i { position: absolute; inset: 0 auto 0 0; background: var(--ov-s1); border-radius: 0 4px 4px 0; min-width: 2px; }
+    .ov-f-bar span { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: 13px; font-weight: 600; color: var(--ov-ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .ov-f-bar span.on { color: #FFFFFF; }
+    .ov-charts { display: grid; gap: 16px; }
+    .ov-chart { display: grid; gap: 6px; min-width: 0; }
+    .ov-chart svg { display: block; width: 100%; overflow: visible; }
+    .ov-chart .total { font-size: 13px; color: var(--ov-ink-2); }
+    .ov-multi { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+    @media (min-width: 620px) { .ov-multi { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    .ov .axis text, .ov .lab { fill: var(--ov-muted); font: 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-variant-numeric: tabular-nums; }
+    .ov .grid line { stroke: var(--ov-line); stroke-width: 1; }
+    .ov .base { stroke: var(--ov-muted); stroke-width: 1; }
+    .ov .bar { fill: var(--ov-s1); }
+    .ov .bar.alt { fill: var(--ov-s2); }
+    .ov .hit { fill: transparent; cursor: default; }
+    .ov .hl { opacity: 0.75; }
+    .ov .endlab { fill: var(--ov-ink); font: 600 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .ov-tip { position: fixed; pointer-events: none; z-index: 10; background: var(--ink); color: var(--card); padding: 6px 9px; border-radius: 6px; font-size: 12.5px; line-height: 1.35; max-width: 240px; opacity: 0; transition: opacity 0.08s; font-variant-numeric: tabular-nums; }
+    .ov-tip.show { opacity: 1; }
+    @media (prefers-reduced-motion: reduce) { .ov-tip { transition: none; } }
+    .ov-tbl { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .ov table { border-collapse: collapse; width: 100%; font-size: 13px; font-variant-numeric: tabular-nums; }
+    .ov th, .ov td { padding: 6px 8px; text-align: right; border-bottom: 1px solid var(--ov-line); white-space: nowrap; }
+    .ov th:first-child, .ov td:first-child { text-align: left; white-space: normal; min-width: 7em; }
+    .ov thead th { font-weight: 600; color: var(--ov-ink-2); font-size: 12px; }
+    .ov tbody tr:last-child td { border-bottom: 0; }
+    .ov td.zero { color: var(--ov-muted); }
+    .ov details { font-size: 13px; }
+    .ov details summary { cursor: pointer; color: var(--ov-accent); padding: 2px 0; }
+    .ov details[open] summary { margin-bottom: 6px; }
+    .ov-kv { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    @media (min-width: 560px) { .ov-kv { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+    .ov-kv > div { background: var(--ov-bg); border-radius: 8px; padding: 8px 10px; display: grid; gap: 1px; }
+    .ov-kv .k { font-size: 12px; color: var(--ov-ink-2); }
+    .ov-kv .v { font: 650 17px/1.2 var(--ov-display); font-variant-numeric: tabular-nums; }
+    .ov-kv .s { font-size: 11.5px; color: var(--ov-muted); }
+    .ov-meter { height: 12px; border-radius: 6px; background: var(--ov-bg); position: relative; overflow: hidden; }
+    .ov-meter i { position: absolute; inset: 0 auto 0 0; background: var(--ov-s2); border-radius: 0 6px 6px 0; min-width: 2px; }
+    .ov-meter .mark { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--ov-warn); }
+    .ov-pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; border: 1px solid currentColor; }
+    .ov-pill.confirmed { color: var(--ov-good); } .ov-pill.pending { color: var(--ov-warn); } .ov-pill.awaiting_payment { color: var(--ov-info); }
+    .ov-pill.rejected { color: var(--ov-bad); } .ov-pill.cancelled { color: var(--ov-muted); }
+    .ov-empty { padding: 14px; border-radius: 10px; background: var(--ov-bg); text-align: center; color: var(--ov-ink-2); font-size: 14px; display: grid; gap: 4px; }
+    .ov-empty b { font: 650 16px/1.3 var(--ov-display); color: var(--ov-ink); }
+    .ov-err { padding: 10px 12px; border-radius: 8px; background: var(--ov-bad-bg); color: var(--ov-bad); font-size: 13px; overflow-wrap: anywhere; }
+    .ov-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+    .ov-links a { display: flex; justify-content: space-between; align-items: center; gap: 6px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--ov-line); text-decoration: none; color: var(--ov-ink); font-weight: 550; font-size: 14px; }
+    .ov-links a::after { content: "↗"; color: var(--ov-accent); }
+    .ov-links a:hover { border-color: var(--ov-accent); }
+    .ov-notes { display: grid; gap: 6px; font-size: 12.5px; color: var(--ov-ink-2); }
+    .ov-notes p { max-width: 65ch; }
+    .ov-foot { font-size: 12px; color: var(--ov-muted); text-align: center; padding-top: 4px; }
   </style>
 </head>
 <body>
@@ -225,7 +338,7 @@
 
     <!-- Inbox -->
     <section id="inbox-view" class="hidden">
-      <h1>Voucher purchases</h1>
+      <h1 id="page-title">Overview</h1>
       <p class="updated" id="updated" aria-live="polite"></p>
       <div class="tabs" role="tablist" id="tabs"></div>
       <p class="lead" id="lead"></p>
@@ -268,7 +381,11 @@
 
     // ---- State ---------------------------------------------------------
     var state = {
-      tab: 'open',            // open | decided | redemptions | sent
+      tab: 'overview',        // overview | open | decided | redemptions | sent
+      overview: null,         // admin_overview() JSON (counts only)
+      overviewAt: null,       // when it was last read
+      overviewMissing: false, // admin_overview() not in the database yet (sql/ops/01)
+      overviewFailed: null,   // what failed, or null
       openRows: [],
       decidedRows: [],
       redemptions: [],
@@ -437,9 +554,34 @@
     // Fire-and-forget, as notifyPushEvent in lib/notify.ts: the notify
     // function re-reads the row and sends exactly once.
     function notifyPush(kind, topupId) {
-      sb.functions.invoke('notify', { body: { kind: kind, topup_id: topupId } })
-        .then(function (r) { if (r.error) console.warn('notify(' + kind + ') failed:', r.error.message); })
-        .catch(function (e) { console.warn('notify(' + kind + ') threw:', e); });
+      notify({ kind: kind, topup_id: topupId });
+    }
+    function notify(body) {
+      sb.functions.invoke('notify', { body: body })
+        .then(function (r) { if (r.error) console.warn('notify(' + body.kind + ') failed:', r.error.message); })
+        .catch(function (e) { console.warn('notify(' + body.kind + ') threw:', e); });
+    }
+    // The Overview. Never throws: a failure here never blocks the inbox, and
+    // the inbox works before sql/ops/01 is run.
+    async function fetchOverview() {
+      try {
+        var res = await sb.rpc('admin_overview');
+        if (res.error) return { error: res.error };
+        return { data: res.data };
+      } catch (e) {
+        return { error: e };
+      }
+    }
+    function applyOverview(r) {
+      if (r.data) {
+        state.overview = r.data;
+        state.overviewAt = new Date();
+        state.overviewMissing = false;
+        state.overviewFailed = null;
+      } else {
+        state.overviewMissing = isMissingFunction(r.error);
+        state.overviewFailed = state.overviewMissing ? null : errorText(r.error);
+      }
     }
 
     // true / false, or null when the check itself failed (offline). Every
@@ -466,17 +608,25 @@
           return;
         }
         if (admin === null) throw new Error(CHECK_FAILED);
-        var results = await Promise.all([listTopups('open'), listTopups('decided'), listRedemptions()]);
-        var deliveries = await fetchDeliveries(results[0].concat(results[1]).map(function (r) { return r.household_id; }));
-        state.openRows = results[0];
-        state.decidedRows = results[1];
-        state.redemptions = results[2];
-        state.deliveries = deliveries;
-        state.failed = null;
-        state.updatedAt = new Date();
+        var overview = fetchOverview(); // in parallel with the inbox; never rejects
+        try {
+          var results = await Promise.all([listTopups('open'), listTopups('decided'), listRedemptions()]);
+          var deliveries = await fetchDeliveries(results[0].concat(results[1]).map(function (r) { return r.household_id; }));
+          state.openRows = results[0];
+          state.decidedRows = results[1];
+          state.redemptions = results[2];
+          state.deliveries = deliveries;
+          state.failed = null;
+          state.updatedAt = new Date();
+        } catch (err) {
+          console.warn('load failed:', err);
+          state.failed = errorText(err);
+        }
+        applyOverview(await overview);
       } catch (err) {
         console.warn('load failed:', err);
         state.failed = errorText(err);
+        state.overviewFailed = state.failed;
       } finally {
         state.loaded = true;
         $('refresh').disabled = false;
@@ -581,7 +731,7 @@
         body: [
           'Only once ' + formatSgd(redemptionTotal(row)) + ' of FairPrice vouchers for ' + (row.helper_name || 'the helper') + ' (' +
             (row.household_name || 'deleted household') + ') have gone out: ' + redemptionWhat(row) + '.',
-          el('label', { class: 'field', for: 'sent-note', text: 'Note (kept on the record; write it as something the household may see)' }),
+          el('label', { class: 'field', for: 'sent-note', text: 'Note (sent to the household as a notification, and kept on the record)' }),
           note
         ],
         actions: [
@@ -596,8 +746,11 @@
         var res = await sb.rpc('admin_mark_redemption_sent', { p_redemption_id: row.id, p_note: note.value.trim() || null });
         if (res.error) throw res.error;
         var marked = res.data && res.data.marked;
+        // Only on a fresh mark. The notify function also claims the row once
+        // (redemptions.sent_push_at), so a repeat call sends nothing.
+        if (marked) notify({ kind: 'redemption_sent', redemption_id: row.id });
         await tell(marked ? 'Marked as sent' : 'Already marked as sent',
-          marked ? 'It moves to Sent.' : 'This one was marked as sent earlier. Nothing changed.');
+          marked ? 'It moves to Sent, and the household gets a notification.' : 'This one was marked as sent earlier. Nothing changed.');
       } catch (err) {
         await tell('Could not mark as sent', isMissingFunction(err)
           ? 'Marking as sent needs sql/topup/05_admin_mark_redemption_sent.sql to be run first. Until then, mark it in the SQL editor (sql/monitoring_queries.sql).'
@@ -610,12 +763,14 @@
 
     // ---- Rendering -----------------------------------------------------
     var TABS = [
+      { key: 'overview', label: 'Overview' },
       { key: 'open', label: 'To confirm' },
       { key: 'decided', label: 'Decided' },
       { key: 'redemptions', label: 'To send' },
       { key: 'sent', label: 'Sent' }
     ];
     var LEADS = {
+      overview: 'Every number from the Claude admin dashboard, read live from the database. Counts only: no names or emails. Test accounts are left out; Singapore time, weeks start Monday.',
       open: 'Match each reference to a PayNow credit in your bank before confirming. Unpaid requests from the last 14 days are listed too, in case someone paid without tapping I’ve paid.',
       decided: 'The last 30 confirmed or rejected voucher purchases.',
       redemptions: 'Helpers’ redeemed rewards waiting for their FairPrice vouchers, with where to send them. Mark one as sent once it has gone out.',
@@ -635,7 +790,7 @@
       TABS.forEach(function (t) {
         var selected = state.tab === t.key;
         var btn = el('button', {
-          type: 'button', class: 'tab', role: 'tab', 'aria-selected': selected ? 'true' : 'false',
+          type: 'button', class: 'tab' + (t.key === 'overview' ? ' wide' : ''), role: 'tab', 'aria-selected': selected ? 'true' : 'false',
           onclick: function () { state.tab = t.key; render(); }
         }, t.label);
         if (t.key in counts && state.loaded) {
@@ -805,17 +960,395 @@
       return card;
     }
 
+    // ---- Overview ------------------------------------------------------
+    // A port of scripts/dashboard/dashboard.html's render, reading the same
+    // JSON from admin_overview(). Text only (textContent), like the rest of
+    // the page. Keep the two in step when a section is added.
+    var ovCharts = [];
+    var ovTip = null;
+    function oe(tag, attrs) {
+      var node = document.createElement(tag);
+      Object.keys(attrs || {}).forEach(function (k) {
+        var v = attrs[k];
+        if (v === null || v === undefined || v === false) return;
+        if (k === 'class') node.className = v;
+        else node.setAttribute(k, v);
+      });
+      for (var i = 2; i < arguments.length; i++) appendKid(node, arguments[i]);
+      return node;
+    }
+    function appendKid(node, kid) {
+      if (kid === null || kid === undefined || kid === false) return;
+      if (Array.isArray(kid)) { kid.forEach(function (k) { appendKid(node, k); }); return; }
+      node.appendChild(kid.nodeType ? kid : document.createTextNode(String(kid)));
+    }
+    var SVG_NS = 'http://www.w3.org/2000/svg';
+    function se(tag, attrs) {
+      var node = document.createElementNS(SVG_NS, tag);
+      Object.keys(attrs || {}).forEach(function (k) { node.setAttribute(k, attrs[k]); });
+      return node;
+    }
+    function fmt(n) { return n === null || n === undefined ? '–' : Number(n).toLocaleString('en-SG'); }
+    function sgd(n) { return n === null || n === undefined ? '–' : 'S$' + Number(n).toLocaleString('en-SG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+    function usd(n) { return 'US$' + Number(n).toLocaleString('en-SG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+    var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    function dmy(d) { var p = d.split('-').map(Number); return p[2] + ' ' + MON[p[1] - 1]; }
+    function pct(a, b) { return b ? Math.round((a / b) * 100) + '%' : '–'; }
+    function isOk(sec) { return !!sec && sec.status === 'ok'; }
+
+    function showTip(e, text) {
+      if (!ovTip) { ovTip = oe('div', { class: 'ov-tip', role: 'status', 'aria-live': 'polite' }); document.body.appendChild(ovTip); }
+      ovTip.textContent = text; ovTip.classList.add('show');
+      var x = Math.min(e.clientX + 12, window.innerWidth - ovTip.offsetWidth - 8);
+      var y = e.clientY - ovTip.offsetHeight - 12;
+      ovTip.style.left = Math.max(8, x) + 'px'; ovTip.style.top = (y < 8 ? e.clientY + 16 : y) + 'px';
+    }
+    function hideTip() { if (ovTip) ovTip.classList.remove('show'); }
+
+    // Single-series bar chart, one scale, drawn at the box's real pixel width.
+    function barChart(o) {
+      var box = oe('div', { class: 'ov-chart-svg' });
+      var height = o.height || 120, everyNth = o.everyNth || 1;
+      function draw() {
+        box.textContent = '';
+        var W = Math.max(240, box.clientWidth || 320), H = height;
+        var padL = 26, padR = 6, padT = 14, padB = 20;
+        var vals = o.data.map(o.value);
+        var rawMax = Math.max.apply(null, [0].concat(vals));
+        var mag = rawMax > 0 ? Math.pow(10, Math.floor(Math.log10(rawMax))) : 1;
+        var step = rawMax <= 4 ? 1 : rawMax <= 10 ? 2 : mag * (rawMax / mag > 5 ? 2 : 1);
+        var max = Math.max(step, Math.ceil(rawMax / step) * step);
+        var svg = se('svg', { viewBox: '0 0 ' + W + ' ' + H, height: H, role: 'img', 'aria-label': o.label });
+        var g = se('g', { class: 'grid' }), ax = se('g', { class: 'axis' });
+        function y(v) { return padT + (H - padT - padB) * (1 - v / max); }
+        [0, max / 2, max].filter(function (v, i, a) { return a.indexOf(v) === i && Number.isInteger(v); }).forEach(function (t) {
+          if (t > 0) g.appendChild(se('line', { x1: padL, x2: W - padR, y1: y(t), y2: y(t) }));
+          var tx = se('text', { x: padL - 6, y: y(t) + 3.5, 'text-anchor': 'end' }); tx.textContent = String(t); ax.appendChild(tx);
+        });
+        svg.appendChild(g); svg.appendChild(ax);
+        var n = o.data.length, slot = (W - padL - padR) / n, bw = Math.max(2, Math.min(28, slot - 2));
+        o.data.forEach(function (d, i) {
+          var v = o.value(d), x = padL + i * slot + (slot - bw) / 2;
+          var hit = se('rect', { class: 'hit', x: padL + i * slot, y: padT, width: slot, height: H - padT - padB });
+          var h = Math.max(0, y(0) - y(v)), r = Math.min(4, bw / 2, h);
+          var path = h > 0
+            ? 'M' + x + ',' + y(0) + ' V' + (y(v) + r) + ' Q' + x + ',' + y(v) + ' ' + (x + r) + ',' + y(v) + ' H' + (x + bw - r) +
+              ' Q' + (x + bw) + ',' + y(v) + ' ' + (x + bw) + ',' + (y(v) + r) + ' V' + y(0) + ' Z'
+            : '';
+          var bar = se('path', { class: 'bar' + (o.alt ? ' alt' : ''), d: path });
+          hit.addEventListener('pointermove', function (e) { bar.classList.add('hl'); showTip(e, o.tipText(d)); });
+          hit.addEventListener('pointerleave', function () { bar.classList.remove('hl'); hideTip(); });
+          svg.appendChild(hit); svg.appendChild(bar);
+          if (i === n - 1 || (i % everyNth === 0 && n - 1 - i >= everyNth)) {
+            var t = se('text', { class: 'lab', x: padL + i * slot + slot / 2, y: H - 5, 'text-anchor': i === n - 1 ? 'end' : 'middle' });
+            t.textContent = d._x || ''; svg.appendChild(t);
+          }
+        });
+        var last = vals[n - 1];
+        if (last > 0) {
+          var t2 = se('text', { class: 'endlab', x: padL + (n - 1) * slot + slot / 2, y: y(last) - 4, 'text-anchor': 'middle' });
+          t2.textContent = fmt(last); svg.appendChild(t2);
+        }
+        svg.appendChild(se('line', { class: 'base', x1: padL, x2: W - padR, y1: y(0), y2: y(0) }));
+        box.appendChild(svg);
+      }
+      ovCharts.push(draw);
+      requestAnimationFrame(draw);
+      return box;
+    }
+    function ovTable(head, rows) {
+      return oe('div', { class: 'ov-tbl' }, oe('table', {},
+        oe('thead', {}, oe('tr', {}, head.map(function (h) { return oe('th', { scope: 'col' }, h); }))),
+        oe('tbody', {}, rows.map(function (r) {
+          return oe('tr', {}, r.map(function (c, i) {
+            return oe('td', { class: i > 0 && (c === 0 || c === '0' || c === 'S$0.00') ? 'zero' : null }, c && c.nodeType ? c : String(c));
+          }));
+        }))));
+    }
+    function details(key, summary) {
+      var kids = Array.prototype.slice.call(arguments, 2);
+      return oe('details', { 'data-k': key }, oe('summary', {}, summary), kids);
+    }
+    function chartBlock(title, total, chart, tableRows, tableHead) {
+      return oe('div', { class: 'ov-chart' },
+        oe('div', { class: 'ov-head' }, oe('h3', {}, title), total != null ? oe('span', { class: 'total ov-num' }, total) : null),
+        chart,
+        tableRows ? details('t:' + title, 'Show as table', ovTable(tableHead, tableRows)) : null);
+    }
+    function ovCard(title, right) {
+      var kids = Array.prototype.slice.call(arguments, 2);
+      return oe('section', { class: 'ov-card' }, oe('div', { class: 'ov-head' }, oe('h2', {}, title), right || null), kids);
+    }
+    function kv(k, v, s) {
+      return oe('div', {}, oe('span', { class: 'k' }, k), oe('span', { class: 'v' }, v), s ? oe('span', { class: 's' }, s) : null);
+    }
+
+    function renderOverview(SNAP) {
+      var S = SNAP.sections || {};
+      var G = S.growth, SUB = S.subscriptions, AI = S.ai, TU = S.topups, REF = S.referrals;
+      var FX = (AI && AI.usd_to_sgd) || 1.3;
+      function approx(n) { return '≈ ' + sgd(Number(n) * FX); }
+      function usdS(n) { return usd(n) + ' (' + approx(n) + ')'; }
+      function usdBig(n) { return [usd(n), ' ', oe('span', { class: 'ov-approx' }, approx(n))]; }
+      function sectionError(name) {
+        var s = S[name];
+        return oe('div', { class: 'ov-err' }, 'This section did not load: ' + (s && s.message ? s.message : 'missing from the overview') +
+          '. Tap Refresh; if it repeats, a table or column has changed.');
+      }
+      var root = oe('div', { class: 'ov' });
+      var add = function (n) { root.appendChild(n); };
+
+      // As of
+      var parts = (SNAP.generated_at_sgt || '').split(' ');
+      add(oe('div', { class: 'ov-stamp' },
+        oe('span', {}, 'Read ', oe('b', { class: 'ov-num' }, parts[0] ? dmy(parts[0]) + ' ' + parts[0].slice(0, 4) + ', ' + parts[1] : '–'), ' Singapore time'),
+        SNAP.exclusions ? oe('span', { class: 'ov-chip' }, SNAP.exclusions.households + ' test households left out') : null));
+
+      // Needs your attention
+      var attn = SNAP.attention || [];
+      var warnCount = attn.filter(function (a) { return a.level === 'warn' && a.count > 0; }).length;
+      add(ovCard('Needs your attention',
+        oe('span', { class: 'ov-state', style: 'color: var(' + (warnCount ? '--ov-warn' : '--ov-good') + ')' }, warnCount ? warnCount + ' to do' : 'All clear'),
+        oe('div', { class: 'ov-attn' }, attn.map(function (a) {
+          var lvl = a.level === 'warn' && a.count > 0 ? 'warn' : a.level === 'info' ? 'info' : 'ok';
+          return oe('div', { class: 'ov-attn-row ' + lvl },
+            oe('div', { class: 'n ov-num', 'aria-label': a.count + ' ' + (lvl === 'ok' ? 'clear' : lvl === 'warn' ? 'needs action' : 'for information') },
+              lvl === 'ok' && !a.count ? '✓' : fmt(a.count)),
+            oe('div', { class: 'what' }, oe('b', {}, a.label), oe('span', {}, a.detail)));
+        }))));
+
+      // Headline tiles
+      function tile(label, value, sub) {
+        return oe('div', { class: 'ov-tile' }, oe('span', { class: 'label' }, label), oe('span', { class: 'value' }, value), sub ? oe('span', { class: 'sub' }, sub) : null);
+      }
+      var gt = isOk(G) ? G.totals : {};
+      var cur = isOk(SUB) ? SUB.current : {};
+      var rev = isOk(SUB) ? SUB.revenue : null;
+      add(oe('div', { class: 'ov-tiles' },
+        tile('Households', fmt(gt.households), fmt(gt.accounts) + ' accounts'),
+        tile('Active this week', fmt(gt.active_7d), isOk(G) ? pct(gt.active_7d, gt.households) + ' of households' : null),
+        tile('Paying now', fmt(cur.paying_now), fmt(cur.on_trial_now) + ' on trial'),
+        tile('Net revenue, all time', rev ? sgd(rev.all_time.net_sgd) : '–', rev ? 'after GST and 15% store fee' : null),
+        tile('Helpers in households', fmt(gt.helpers_now), isOk(G) ? fmt(gt.helper_invites_accepted) + ' invite' + (gt.helper_invites_accepted === 1 ? '' : 's') + ' accepted' : null),
+        tile('AI spend this period', isOk(AI) ? usdBig(AI.current_period_spend_usd) : '–', isOk(AI) ? 'limit ' + usdS(AI.anthropic_limit_usd) : null)));
+
+      // Funnel
+      if (isOk(G)) {
+        var signedUp = gt.households + gt.accounts_not_in_household;
+        var steps = [
+          ['Signed up', signedUp],
+          ['Onboarded', gt.onboarded],
+          ['Published a plan', gt.published_a_plan],
+          ['Active this week', gt.active_7d],
+          ['Started a trial', isOk(SUB) ? SUB.totals.trial_starts : null],
+          ['Paying now', isOk(SUB) ? cur.paying_now : null]
+        ];
+        add(ovCard('Funnel', oe('span', { class: 'ov-muted ov-small' }, 'households'),
+          oe('div', { class: 'ov-funnel', role: 'list' }, steps.map(function (st) {
+            var v = st[1];
+            var w = signedUp ? Math.max(0, Math.min(100, ((v || 0) / signedUp) * 100)) : 0;
+            return oe('div', { class: 'ov-f-row', role: 'listitem' }, oe('span', { class: 'ov-f-label' }, st[0]),
+              oe('div', { class: 'ov-f-bar' }, oe('i', { style: 'width:' + w + '%' }),
+                oe('span', { class: w > 30 ? 'on' : null, style: w > 30 ? '' : 'left: calc(' + w + '% + 8px)' }, v == null ? '–' : fmt(v) + '  ·  ' + pct(v, signedUp))));
+          })),
+          oe('p', { class: 'ov-muted ov-small' }, '"Signed up" counts households plus accounts that never joined one. "Started a trial" counts production trial starts.')));
+      }
+
+      // Growth
+      if (isOk(G)) {
+        var daily = G.daily.map(function (x) { return Object.assign({}, x, { _x: dmy(x.day) }); });
+        var weekly = G.weekly.map(function (x) { return Object.assign({}, x, { _x: dmy(x.week) }); });
+        var sum = function (arr, k) { return arr.reduce(function (a, x) { return a + x[k]; }, 0); };
+        var wk = function (k, alt) {
+          return barChart({ data: weekly, value: function (x) { return x[k]; }, label: k + ' per week', alt: alt, everyNth: 3, height: 110,
+            tipText: function (x) { return 'Week of ' + dmy(x.week) + ': ' + fmt(x[k]); } });
+        };
+        var wkRows = function (k) { return weekly.map(function (x) { return ['Week of ' + dmy(x.week), x[k]]; }); };
+        add(ovCard('Growth', oe('span', { class: 'ov-muted ov-small' }, 'Singapore time, weeks start Monday'),
+          oe('div', { class: 'ov-charts' },
+            chartBlock('Sign-ups per day, last 30 days', fmt(sum(daily, 'signups')) + ' in 30 days · ' + fmt(gt.accounts) + ' total',
+              barChart({ data: daily, value: function (x) { return x.signups; }, label: 'Sign-ups per day', everyNth: 7,
+                tipText: function (x) { return dmy(x.day) + ': ' + fmt(x.signups) + ' sign-ups, ' + fmt(x.households) + ' households'; } }),
+              daily.map(function (x) { return [dmy(x.day), x.signups, x.households]; }), ['Day', 'Sign-ups', 'Households']),
+            oe('div', { class: 'ov-multi' },
+              chartBlock('Meal plans per week', fmt(gt.meal_plans) + ' total', wk('meal_plans'), wkRows('meal_plans'), ['Week', 'Plans']),
+              chartBlock('Meals per week', fmt(gt.meals) + ' total', wk('meals'), wkRows('meals'), ['Week', 'Meals']),
+              chartBlock('Ratings per week', fmt(gt.ratings) + ' total', wk('ratings', true), wkRows('ratings'), ['Week', 'Ratings']))),
+          oe('div', { class: 'ov-kv' },
+            kv('New households', fmt(sum(daily, 'households')), 'last 30 days'),
+            kv('Onboarded', fmt(gt.onboarded), pct(gt.onboarded, gt.households) + ' of households'),
+            kv('Co-employers', fmt(gt.co_employers_now), fmt(gt.co_employer_invites_accepted) + ' invite' + (gt.co_employer_invites_accepted === 1 ? '' : 's') + ' accepted'),
+            kv('Not in a household', fmt(gt.accounts_not_in_household), 'accounts with no profile')),
+          details('active', 'How "active this week" is counted',
+            oe('div', { class: 'ov-notes' }, oe('p', {}, G.active_7d.definition),
+              ovTable(['Signal', 'Households'], Object.keys(G.active_7d.by_signal).map(function (k) { return [k.replace(/_/g, ' '), G.active_7d.by_signal[k]]; }))))));
+      } else add(ovCard('Growth', null, sectionError('growth')));
+
+      // Subscriptions
+      if (isOk(SUB)) {
+        var T = SUB.totals;
+        var sweekly = SUB.weekly.map(function (x) { return Object.assign({}, x, { _x: dmy(x.week) }); });
+        var products = Object.keys(SUB.by_product);
+        var kinds = [['trial_starts', 'Trials'], ['paid_charges', 'Paid'], ['first_paid_charges', 'First paid'], ['cancellations', 'Cancelled'], ['refunds', 'Refunds'], ['expirations', 'Expired'], ['billing_issues', 'Billing issue']];
+        var recentWeeks = sweekly.slice(-8).reverse();
+        var R = SUB.revenue;
+        add(ovCard('Subscriptions', oe('span', { class: 'ov-muted ov-small' }, 'production store events'),
+          oe('div', { class: 'ov-kv' },
+            kv('Trial starts', fmt(T.trial_starts), 'all time'),
+            kv('Paid charges', fmt(T.paid_charges), fmt(T.first_paid_charges) + ' first payments'),
+            kv('Cancellations', fmt(T.cancellations), fmt(T.expirations) + ' expired'),
+            kv('Refunds', fmt(T.refunds), fmt(T.billing_issues) + ' billing issues')),
+          chartBlock('Net revenue per week', sgd(R.all_time.net_sgd) + ' all time',
+            barChart({ data: sweekly, value: function (x) { return x.revenue.net_sgd; }, label: 'Net revenue per week', everyNth: 3, height: 110,
+              tipText: function (x) { return 'Week of ' + dmy(x.week) + ': net ' + sgd(x.revenue.net_sgd) + ', gross ' + sgd(x.revenue.gross_sgd); } }),
+            sweekly.map(function (x) { return ['Week of ' + dmy(x.week), sgd(x.revenue.gross_sgd), sgd(x.revenue.ex_gst_sgd), sgd(x.revenue.net_sgd)]; }), ['Week', 'Gross', 'Ex-GST', 'Net']),
+          ovTable(['Revenue', 'This week', 'All time'], [
+            ['Gross (incl. 9% GST)', sgd(R.this_week.gross_sgd), sgd(R.all_time.gross_sgd)],
+            ['Ex-GST', sgd(R.this_week.ex_gst_sgd), sgd(R.all_time.ex_gst_sgd)],
+            ['Net after 15% store fee', sgd(R.this_week.net_sgd), sgd(R.all_time.net_sgd)],
+            ['Cross-check: gross × takehome', sgd(R.this_week.takehome_crosscheck_sgd), sgd(R.all_time.takehome_crosscheck_sgd)]
+          ]),
+          oe('h3', {}, 'Last 8 weeks, by product'),
+          products.length
+            ? ovTable(['Week', 'Product'].concat(kinds.map(function (k) { return k[1]; })),
+                [].concat.apply([], recentWeeks.map(function (w) {
+                  return products.map(function (p) { return [dmy(w.week), p].concat(kinds.map(function (k) { return (w.by_product[p] || {})[k[0]] || 0; })); });
+                })))
+            : oe('p', { class: 'ov-muted ov-small' }, 'No production store events from real households yet. A new product (a partner plan) gets its own row here.'),
+          oe('h3', {}, 'Households right now'),
+          oe('div', { class: 'ov-kv' },
+            kv('Complimentary', fmt(cur.complimentary), 'free access'),
+            kv('On trial', fmt(cur.on_trial_now), null),
+            kv('Paying', fmt(cur.paying_now), cur.will_not_renew ? fmt(cur.will_not_renew) + ' not renewing' : null),
+            kv('No subscription row', fmt(cur.households_without_row), null)),
+          oe('p', { class: 'ov-small' }, 'By status: ',
+            Object.keys(cur.by_status).map(function (k) { return oe('span', { class: 'ov-chip', style: 'margin-right:4px' }, k + ' ' + cur.by_status[k]); }),
+            Object.keys(cur.by_product).length ? ' By product: ' + Object.keys(cur.by_product).map(function (k) { return k + ' ' + cur.by_product[k]; }).join(', ') : ''),
+          details('subrules', 'How these are counted',
+            oe('div', { class: 'ov-notes' }, Object.keys(SUB.rules).map(function (k) { return oe('p', {}, oe('b', {}, k.replace(/_/g, ' ') + ': '), SUB.rules[k]); }),
+              oe('p', {}, 'Left out: ' + fmt(SUB.skipped.sandbox_events) + ' sandbox events and ' + fmt(SUB.skipped.test_household_production_events) + ' production events from test households.')))));
+      } else add(ovCard('Subscriptions', null, sectionError('subscriptions')));
+
+      // AI
+      if (isOk(AI)) {
+        var share = Math.min(1, AI.current_period_spend_incl_test_usd / AI.anthropic_limit_usd);
+        add(ovCard('AI spend', oe('span', { class: 'ov-muted ov-small' }, 'cap ' + usdS(AI.cap_usd_per_household) + ' per household a month'),
+          oe('div', { class: 'ov-chart' },
+            oe('div', { class: 'ov-head' }, oe('h3', {}, 'All households vs the Anthropic monthly limit'),
+              oe('span', { class: 'total ov-num' }, usdS(AI.current_period_spend_incl_test_usd) + ' of ' + usdS(AI.anthropic_limit_usd))),
+            oe('div', { class: 'ov-meter', role: 'meter', 'aria-valuemin': 0, 'aria-valuemax': AI.anthropic_limit_usd, 'aria-valuenow': AI.current_period_spend_incl_test_usd, 'aria-label': 'AI spend against the Anthropic limit' },
+              oe('i', { style: 'width:' + (share * 100).toFixed(2) + '%' }), oe('span', { class: 'mark', style: 'left:80%', title: '80%' })),
+            oe('p', { class: 'ov-muted ov-small' }, 'Includes test households, because Anthropic bills them too. The amber tick is 80%. Limit source: ' + AI.anthropic_limit_source + '.')),
+          oe('div', { class: 'ov-kv' },
+            kv('Real households', usd(AI.current_period_spend_usd), approx(AI.current_period_spend_usd) + ' · this period'),
+            kv('Spending now', fmt(AI.households_spending_now), 'households'),
+            kv('At 80%+ of cap', fmt(AI.households_near_cap.length), 'households'),
+            kv('Cap', usd(AI.cap_usd_per_household), approx(AI.cap_usd_per_household) + ' · per household')),
+          AI.households_near_cap.length
+            ? ovTable(['Household', 'Spent', 'Of cap'], AI.households_near_cap.map(function (h) { return [h.household, usdS(h.spent_usd), Math.round(h.share_of_cap * 100) + '%']; }))
+            : null,
+          oe('p', { class: 'ov-muted ov-small' }, AI.definition + ' S$ figures are approximate, at a fixed US$1 = S$' + Number(FX).toFixed(2) + ' (admin_settings); Anthropic bills in US$.')));
+      } else add(ovCard('AI spend', null, sectionError('ai')));
+
+      // Top-ups
+      if (isOk(TU)) {
+        var st = TU.by_status, red = TU.redemptions, hp = TU.helper_points;
+        add(ovCard('Voucher top-ups', oe('span', { class: 'ov-muted ov-small' }, 'FairPrice vouchers, PayNow'),
+          oe('div', { class: 'ov-kv' },
+            kv('Confirmed this week', sgd(TU.confirmed_sgd.this_week), null),
+            kv('This month', sgd(TU.confirmed_sgd.this_month), null),
+            kv('All time', sgd(TU.confirmed_sgd.all_time), fmt(st.confirmed.n) + ' top-ups'),
+            kv('Pending', fmt(TU.pending.n), TU.pending.n ? 'oldest ' + TU.pending.oldest_age_days + ' days' : 'none waiting')),
+          ovTable(['Status', 'Requests', 'S$'], [
+            ['Awaiting payment', st.awaiting_payment.n, sgd(st.awaiting_payment.sgd)],
+            ['Pending (paid, to confirm)', st.pending.n, sgd(st.pending.sgd)],
+            ['Confirmed', st.confirmed.n, sgd(st.confirmed.sgd)],
+            ['Rejected', st.rejected.n, sgd(st.rejected.sgd)],
+            ['Cancelled', st.cancelled.n, sgd(st.cancelled.sgd)]
+          ]),
+          TU.awaiting_payment_expired ? oe('p', { class: 'ov-muted ov-small' }, fmt(TU.awaiting_payment_expired) + ' awaiting payment are past their 7-day expiry.') : null,
+          oe('h3', {}, 'Last 20 top-ups'),
+          TU.recent.length
+            ? ovTable(['Date', 'Reference', 'Amount', 'Status'], TU.recent.map(function (r) {
+                return [dmy(r.date), r.reference, sgd(r.amount_sgd), oe('span', { class: 'ov-pill ' + r.status }, r.status.replace('_', ' '))];
+              }))
+            : oe('p', { class: 'ov-muted ov-small' }, 'No top-ups from real households yet' + (TU.excluded_test.total ? ' (' + TU.excluded_test.total + ' from test households left out)' : '') + '.'),
+          oe('h3', {}, 'Helper voucher redemptions'),
+          oe('div', { class: 'ov-kv' },
+            kv('Pending', fmt(red.pending.n), red.pending.n ? sgd(red.pending.voucher_sgd) + ', oldest ' + red.pending.oldest_age_days + ' days' : 'none waiting'),
+            kv('Fulfilled', fmt(red.fulfilled.n), sgd(red.fulfilled.voucher_sgd))),
+          oe('div', { class: 'ov-kv' },
+            kv('Helper points waiting to be redeemed', fmt(hp.points) + ' pts', sgd(hp.sgd) + ' at S$' + hp.voucher_sgd + ' = ' + fmt(hp.voucher_points) + ' pts'),
+            kv('Helpers holding points', fmt(hp.helpers_with_points), fmt(hp.helpers_at_voucher) + ' with enough for a voucher'))));
+      } else add(ovCard('Voucher top-ups', null, sectionError('topups')));
+
+      // Referrals
+      if (REF && REF.status === 'ok') {
+        var rrows = REF.report || [];
+        var cols = rrows.length ? Object.keys(rrows[0]) : [];
+        add(ovCard('Referrals', oe('span', { class: 'ov-muted ov-small' }, fmt(REF.partners) + ' partners'),
+          rrows.length
+            ? ovTable(cols.map(function (c) { return c.replace(/_/g, ' '); }), rrows.map(function (r) { return cols.map(function (c) { return typeof r[c] === 'number' ? fmt(r[c]) : (r[c] == null ? '–' : r[c]); }); }))
+            : oe('p', { class: 'ov-muted ov-small' }, REF.report_view ? 'No partner rows yet.' : 'The partner table exists, but no report view yet.'),
+          REF.holding_helpers != null ? oe('div', { class: 'ov-kv' }, kv('Holding helpers', fmt(REF.holding_helpers), 'waiting for a household')) : null));
+      } else if (REF && REF.status === 'error') add(ovCard('Referrals', null, sectionError('referrals')));
+      else {
+        var rc = ovCard('Referrals', null, oe('div', { class: 'ov-empty' }, oe('b', {}, 'Not started yet'),
+          oe('span', {}, 'Per-partner households, trials, paying, net S$ and commission show here once the partner code ships (v1.1).')));
+        rc.classList.add('quiet');
+        add(rc);
+      }
+
+      // Consoles
+      var L = [
+        ['App Store Connect', 'https://appstoreconnect.apple.com/apps'],
+        ['Play Console', 'https://play.google.com/console/developers'],
+        ['RevenueCat', 'https://app.revenuecat.com/'],
+        ['Cloudflare Web Analytics', 'https://dash.cloudflare.com/?to=/:account/web-analytics'],
+        ['Search Console', 'https://search.google.com/search-console?resource_id=sc-domain:getcookwhat.com']
+      ];
+      add(ovCard('Consoles', null, oe('div', { class: 'ov-links' }, L.map(function (l) { return oe('a', { href: l[1], target: '_blank', rel: 'noopener noreferrer' }, l[0]); }))));
+
+      var ex = SNAP.exclusions;
+      add(oe('p', { class: 'ov-foot' },
+        ex ? 'Every count leaves out ' + ex.accounts + ' test accounts in ' + ex.households + ' households (team logins, the App Review demo, Play closed-test testers, example.com sign-ups). ' : '',
+        'Counts only; no names or emails. The test-account list and the rates are in the database (admin_excluded_emails, admin_settings; Docs/admin_dashboard.md).'));
+      return root;
+    }
+
     function render() {
       renderTabs();
+      var onOverview = state.tab === 'overview';
+      $('page-title').textContent = onOverview ? 'Overview' : 'Voucher purchases';
       $('lead').textContent = LEADS[state.tab];
-      $('updated').textContent = state.updatedAt
-        ? 'Updated ' + formatTime(state.updatedAt) + ' · refreshes every minute'
+      var at = onOverview ? state.overviewAt : state.updatedAt;
+      $('updated').textContent = at
+        ? 'Updated ' + formatTime(at) + ' · refreshes every minute'
         : '';
       var list = $('list');
+      // Keep any "Show as table" the reader opened across the minute refresh.
+      var openDetails = {};
+      Array.prototype.forEach.call(list.querySelectorAll('details[open][data-k]'), function (d) { openDetails[d.getAttribute('data-k')] = true; });
       list.textContent = '';
+      ovCharts = [];
       if (!state.loaded) {
         list.appendChild(el('div', { class: 'skeleton' }));
         list.appendChild(el('div', { class: 'skeleton' }));
+        return;
+      }
+      if (onOverview) {
+        if (state.overviewMissing) {
+          list.appendChild(el('p', { class: 'notice', text: 'The Overview needs sql/ops/01_admin_overview.sql to be run first. The other four tabs work as before.' }));
+        } else if (state.overviewFailed && !state.overview) {
+          list.appendChild(el('p', { class: 'notice error', role: 'alert', text: 'Could not load the overview: ' + state.overviewFailed + ' Tap Refresh to try again.' }));
+        } else if (state.overview) {
+          if (state.overviewFailed) list.appendChild(el('p', { class: 'notice error', role: 'alert', text: 'Could not refresh: ' + state.overviewFailed + ' Showing the numbers from ' + formatTime(state.overviewAt) + '.' }));
+          list.appendChild(renderOverview(state.overview));
+          // Draw now that the boxes have a width (requestAnimationFrame alone
+          // can wait while the tab is in the background).
+          ovCharts.forEach(function (f) { f(); });
+          Array.prototype.forEach.call(list.querySelectorAll('details[data-k]'), function (d) { if (openDetails[d.getAttribute('data-k')]) d.open = true; });
+        }
         return;
       }
       if (state.failed) {
@@ -867,6 +1400,7 @@
       state.openRows = []; state.decidedRows = []; state.redemptions = [];
       state.deliveries = {}; state.rejecting = {}; state.busy = null;
       state.loaded = false; state.failed = null; state.updatedAt = null;
+      state.overview = null; state.overviewAt = null; state.overviewMissing = false; state.overviewFailed = null;
       receiptCache = {};
     }
 
@@ -895,6 +1429,11 @@
       showSignin();
     });
     $('refresh').addEventListener('click', function () { load(); });
+    var resizeTimer = null;
+    window.addEventListener('resize', function () {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function () { ovCharts.forEach(function (f) { f(); }); }, 120);
+    });
     document.addEventListener('visibilitychange', function () {
       if (document.visibilityState === 'visible' && signedIn && !userIsMidAction()) load();
     });
