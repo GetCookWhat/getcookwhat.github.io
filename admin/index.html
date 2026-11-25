@@ -117,7 +117,7 @@
     .lead { color: var(--muted); margin: 0 0 14px; font-size: 15px; }
 
     /* Tabs */
-    .tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 14px 0 12px; }
+    .tabs { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin: 14px 0 12px; }
     @media (max-width: 620px) { .tabs { grid-template-columns: repeat(2, 1fr); } }
     .tab {
       font: inherit; font-size: 14px; font-weight: 600;
@@ -171,13 +171,15 @@
     .btn.muted { background: transparent; color: var(--ink); border-color: var(--line); }
 
     label.field { display: block; font-weight: 600; font-size: 15px; margin: 14px 0 6px; }
-    textarea, input[type="email"], input[type="password"] {
+    textarea, input[type="email"], input[type="password"], input[type="text"] {
       font: inherit; width: 100%; color: var(--ink); background: var(--field);
       border: 1.5px solid var(--line); border-radius: 12px; padding: 10px 12px;
     }
     textarea { min-height: 84px; resize: vertical; }
     textarea:focus, input:focus { outline: 2px solid var(--coral); outline-offset: 1px; border-color: transparent; }
     .hint { color: var(--muted); font-size: 13px; margin-top: 4px; text-align: right; }
+    .confirm-tick { display: flex; gap: 10px; align-items: flex-start; margin-top: 12px; font-size: 15px; line-height: 1.4; cursor: pointer; }
+    .confirm-tick input { width: 20px; height: 20px; margin-top: 1px; flex: none; accent-color: var(--coral); }
 
     .empty { text-align: center; padding: 28px 12px; color: var(--muted); }
     .empty .icon { font-size: 28px; }
@@ -381,7 +383,7 @@
 
     // ---- State ---------------------------------------------------------
     var state = {
-      tab: 'overview',        // overview | open | decided | redemptions | sent
+      tab: 'overview',        // overview | open | decided | redemptions | sent | accounts
       overview: null,         // admin_overview() JSON (counts only)
       overviewAt: null,       // when it was last read
       overviewMissing: false, // admin_overview() not in the database yet (sql/ops/01)
@@ -395,7 +397,10 @@
       loaded: false,
       failed: null,           // what failed to load, or null
       redemptionsMissingFulfil: false, // admin_list_redemptions predates sql/topup/05
-      updatedAt: null
+      updatedAt: null,
+      // Accounts tab (admin-reset-password edge function). The temporary
+      // password is NEVER kept here: it is shown once, in the dialog.
+      accounts: { query: '', looking: false, result: null, error: null, resetting: false, confirmed: false }
     };
     var receiptCache = {};    // path -> { url, until }
     var timer = null;
@@ -456,6 +461,12 @@
     function errorText(err) {
       if (!err) return 'Try again.';
       return err.message || String(err);
+    }
+    // A helper's phone login is a hidden email (6591234567@phone.getcookwhat.com,
+    // supabase/functions/_shared/phoneLogin.ts). Never shown: "+65 9123 4567".
+    function displayLogin(email) {
+      var m = /^65([89]\d{7})@phone\.getcookwhat\.com$/i.exec(String(email || '').trim());
+      return m ? '+65 ' + m[1].slice(0, 4) + ' ' + m[1].slice(4) : (email || '');
     }
     function isMissingFunction(err) {
       return !!err && (err.code === 'PGRST202' || /could not find the function/i.test(err.message || ''));
@@ -767,14 +778,16 @@
       { key: 'open', label: 'To confirm' },
       { key: 'decided', label: 'Decided' },
       { key: 'redemptions', label: 'To send' },
-      { key: 'sent', label: 'Sent' }
+      { key: 'sent', label: 'Sent' },
+      { key: 'accounts', label: 'Accounts' }
     ];
     var LEADS = {
       overview: 'Every number from the Claude admin dashboard, read live from the database. Counts only: no names or emails. Test accounts are left out; Singapore time, weeks start Monday.',
       open: 'Match each reference to a PayNow credit in your bank before confirming. Unpaid requests from the last 14 days are listed too, in case someone paid without tapping I’ve paid.',
       decided: 'The last 30 confirmed or rejected voucher purchases.',
       redemptions: 'Helpers’ redeemed rewards waiting for their FairPrice vouchers, with where to send them. Mark one as sent once it has gone out.',
-      sent: 'The last 30 redemptions marked as sent.'
+      sent: 'The last 30 redemptions marked as sent.',
+      accounts: 'Find a login by phone number or email, and set a temporary password. Helpers who sign in with a phone number cannot reset their own password: they email admin.cookwhat@gmail.com with their number. The temporary password is shown once; tell the helper to change it on her Account screen.'
     };
 
     function pendingRedemptions() { return state.redemptions.filter(function (r) { return r.status === 'pending'; }); }
@@ -808,7 +821,7 @@
       return el('div', { class: 'muted' },
         el('span', { class: 'pii', text: row.requester_name || 'Unknown payer' }),
         row.requester_email ? ' · ' : '',
-        row.requester_email ? el('span', { class: 'pii', text: row.requester_email }) : null);
+        row.requester_email ? el('span', { class: 'pii', text: displayLogin(row.requester_email) }) : null);
     }
 
     function receiptBlock(path) {
@@ -958,6 +971,115 @@
         card.appendChild(el('div', { class: 'actions' }, btn));
       }
       return card;
+    }
+
+    // ---- Accounts (admin-reset-password) -------------------------------
+    async function callResetFunction(body) {
+      var res = await sb.functions.invoke('admin-reset-password', { body: body });
+      if (!res.error) return res.data;
+      var detail = null;
+      try { detail = res.error.context && (await res.error.context.json()); } catch (e) { detail = null; }
+      var err = new Error((detail && detail.message) || (detail && detail.error) || res.error.message || 'Could not reach the reset function.');
+      err.code = detail && detail.error;
+      throw err;
+    }
+    async function lookupAccount() {
+      var a = state.accounts;
+      if (!a.query.trim() || a.looking) return;
+      a.looking = true; a.error = null; a.result = null; a.confirmed = false;
+      render();
+      try {
+        var data = await callResetFunction({ action: 'lookup', login: a.query.trim() });
+        a.result = data && data.account ? data.account : null;
+        if (!a.result) a.error = 'No account found.';
+      } catch (err) {
+        a.error = err.code === 'not_admin' ? 'This login is not an admin.' : errorText(err);
+      } finally {
+        a.looking = false;
+        render();
+      }
+    }
+    async function resetAccount(acct) {
+      if (!state.accounts.confirmed) return; // the tick-box is required (the function checks too)
+      var go = await ask({
+        title: 'Set a temporary password for ' + (acct.name || acct.login) + '?',
+        body: ['Their current password stops working at once, and every device they are signed in on is signed out. You will see the temporary password one time only: tell it to ' + acct.login + '. The app asks them to choose a new one when they sign in.'],
+        actions: [
+          { label: 'Cancel', kind: 'muted', value: false },
+          { label: 'Set temporary password', kind: 'danger', value: true }
+        ]
+      });
+      if (!go) return;
+      state.accounts.resetting = true;
+      render();
+      try {
+        var data = await callResetFunction({ action: 'reset', user_id: acct.user_id, confirmed_identity: true });
+        state.accounts.resetting = false;
+        state.accounts.confirmed = false;
+        render();
+        var signedOut = data.sessions_ended === null || data.sessions_ended === undefined
+          ? null
+          : el('p', { text: data.sessions_ended === 0 ? 'They were not signed in anywhere.' : 'Signed out on ' + data.sessions_ended + ' device' + (data.sessions_ended === 1 ? '' : 's') + '.' });
+        await ask({
+          title: 'Temporary password for ' + data.login,
+          body: [
+            el('p', { class: 'reference', text: data.temp_password }),
+            'Shown once — it is not saved anywhere. Give it to the helper (a phone call or a message to ' + data.login + '), then close this.',
+            signedOut,
+            data.warning ? el('p', { class: 'notice error', role: 'alert', text: data.warning }) : null
+          ].filter(Boolean),
+          actions: [{ label: 'Done', kind: 'primary', value: true }]
+        });
+      } catch (err) {
+        state.accounts.resetting = false;
+        render();
+        await tell('Could not reset the password', errorText(err));
+      }
+    }
+    function accountStateText(acct) {
+      if (acct.state === 'member') return (acct.role === 'employer' ? 'Employer' : 'Helper') + ' in ' + (acct.household_name || 'a household');
+      if (acct.state === 'holding') return 'Helper · not in a household yet';
+      return 'Login with no profile (sign-up not finished)';
+    }
+    function renderAccounts() {
+      var a = state.accounts;
+      var wrap = el('div');
+      var form = el('form', { class: 'card', novalidate: true });
+      form.appendChild(el('label', { class: 'field', for: 'acct-login', text: 'Phone number or email' }));
+      var input = el('input', { id: 'acct-login', type: 'text', autocomplete: 'off', autocapitalize: 'none', spellcheck: 'false', placeholder: '9123 4567 or name@example.com' });
+      input.value = a.query;
+      input.addEventListener('input', function () { a.query = input.value; });
+      form.appendChild(input);
+      var go = el('button', { type: 'submit', class: 'btn primary', text: a.looking ? 'Looking up…' : 'Look up' });
+      go.disabled = a.looking;
+      form.appendChild(el('div', { class: 'actions' }, go));
+      form.addEventListener('submit', function (e) { e.preventDefault(); lookupAccount(); });
+      wrap.appendChild(form);
+      if (a.error) wrap.appendChild(el('p', { class: 'notice error', role: 'alert', text: a.error }));
+      if (a.result) {
+        var acct = a.result;
+        var card = el('article', { class: 'card' });
+        card.appendChild(el('h2', {}, el('span', { class: 'pii', text: acct.name || 'No name' })));
+        card.appendChild(el('div', { class: 'status teal', text: accountStateText(acct) }));
+        card.appendChild(el('div', { class: 'muted' }, (acct.kind === 'phone' ? 'Phone: ' : 'Email: '), el('span', { class: 'pii', text: acct.login })));
+        card.appendChild(el('div', { class: 'muted', text: 'Created ' + formatDayTime(acct.created_at) + (acct.last_sign_in_at ? ' · last sign-in ' + formatDayTime(acct.last_sign_in_at) : ' · never signed in') }));
+        if (acct.is_admin) {
+          card.appendChild(el('p', { class: 'notice', text: 'Admin logins cannot be reset here.' }));
+        } else {
+          // Required before a reset: the admin has checked who is asking
+          var tick = el('input', { type: 'checkbox', id: 'acct-confirm' });
+          tick.checked = !!a.confirmed;
+          var btn = el('button', { type: 'button', class: 'btn danger-outline', text: a.resetting ? 'Resetting…' : 'Reset password' });
+          btn.disabled = a.resetting || !a.confirmed;
+          tick.addEventListener('change', function () { a.confirmed = tick.checked; btn.disabled = a.resetting || !a.confirmed; });
+          card.appendChild(el('label', { class: 'confirm-tick', for: 'acct-confirm' }, tick,
+            el('span', { text: 'I\u2019ve confirmed this is the helper: messaged that number on WhatsApp, or checked with their employer' })));
+          btn.addEventListener('click', function () { resetAccount(acct); });
+          card.appendChild(el('div', { class: 'actions' }, btn));
+        }
+        wrap.appendChild(card);
+      }
+      return wrap;
     }
 
     // ---- Overview ------------------------------------------------------
@@ -1319,7 +1441,7 @@
     function render() {
       renderTabs();
       var onOverview = state.tab === 'overview';
-      $('page-title').textContent = onOverview ? 'Overview' : 'Voucher purchases';
+      $('page-title').textContent = onOverview ? 'Overview' : state.tab === 'accounts' ? 'Accounts' : 'Voucher purchases';
       $('lead').textContent = LEADS[state.tab];
       var at = onOverview ? state.overviewAt : state.updatedAt;
       $('updated').textContent = at
@@ -1331,6 +1453,13 @@
       Array.prototype.forEach.call(list.querySelectorAll('details[open][data-k]'), function (d) { openDetails[d.getAttribute('data-k')] = true; });
       list.textContent = '';
       ovCharts = [];
+      // Accounts needs none of the inbox data: it calls its edge function on
+      // demand, so it renders before (and regardless of) the minute load
+      if (state.tab === 'accounts') {
+        $('updated').textContent = '';
+        list.appendChild(renderAccounts());
+        return;
+      }
       if (!state.loaded) {
         list.appendChild(el('div', { class: 'skeleton' }));
         list.appendChild(el('div', { class: 'skeleton' }));
@@ -1401,6 +1530,7 @@
       state.deliveries = {}; state.rejecting = {}; state.busy = null;
       state.loaded = false; state.failed = null; state.updatedAt = null;
       state.overview = null; state.overviewAt = null; state.overviewMissing = false; state.overviewFailed = null;
+      state.accounts = { query: '', looking: false, result: null, error: null, resetting: false, confirmed: false };
       receiptCache = {};
     }
 
